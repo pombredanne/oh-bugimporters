@@ -43,7 +43,9 @@ class TracBugImporter(BugImporter):
     def process_queries(self, queries):
         # If this is an old Trac version, update the timeline.
         if self.tm.old_trac:
-            self.data_transits['trac']['update_timeline'](self.tm.get_base_url())
+            pass
+            ### FIXME: Ensure old_trac handling is covered in the
+            ### test suite.
 
         # Add all the queries to the waiting list
         for query in queries:
