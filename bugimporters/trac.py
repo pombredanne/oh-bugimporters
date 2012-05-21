@@ -397,7 +397,6 @@ class TracBugParser(object):
 
         # Check for the bitesized keyword
         if tm.bitesized_type:
-            ret['bite_size_tag_name'] = tm.bitesized_text
             b_list = tm.bitesized_text.split(',')
             ret['good_for_newcomers'] = any(
                     b in self.bug_csv[tm.bitesized_type] for b in b_list)

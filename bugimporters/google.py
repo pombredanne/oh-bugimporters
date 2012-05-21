@@ -225,11 +225,9 @@ class GoogleBugParser(object):
         labels = [label.text for label in issue.label]
         # Check for the bitesized keyword(s)
         if tm.bitesized_type:
-            ret_dict['bite_size_tag_name'] = tm.bitesized_text
             b_list = tm.bitesized_text.split(',')
             ret_dict['good_for_newcomers'] = any(b in labels for b in b_list)
         else:
-            ret_dict['bite_size_tag_name'] = ''
             ret_dict['good_for_newcomers'] = False
         # Check whether this is a documentation bug.
         if tm.documentation_type:

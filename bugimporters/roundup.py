@@ -234,7 +234,6 @@ class RoundupBugParser(object):
 
         # Check for the bitesized keyword
         if tm.bitesized_field:
-            ret['bite_size_tag_name'] = tm.bitesized_text
             b_list = tm.bitesized_text.split(',')
             ret['good_for_newcomers'] = any(b in metadata_dict.get(tm.bitesized_field, '') for b in b_list)
         else:

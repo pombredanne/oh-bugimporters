@@ -113,7 +113,6 @@ class GitHubBugParser(object):
             'looks_closed': (issue['state'] == 'closed'),
         }
 
-        parsed['bize_size_tag_name'] = self.tm.bitesized_tag
         b_list = self.tm.bitesized_tag.split(',')
         parsed['good_for_newcomers'] = any(b in issue['labels'] for b in b_list)
 

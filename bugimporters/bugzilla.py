@@ -320,7 +320,6 @@ class BugzillaBugParser:
                        keywords_text.split(','))
         # Check for the bitesized keyword
         if bitesized_type:
-            ret_dict['bite_size_tag_name'] = bitesized_text
             b_list = bitesized_text.split(',')
             if bitesized_type == 'key':
                 ret_dict['good_for_newcomers'] = any(b in keywords for b in b_list)
@@ -418,7 +417,6 @@ class KDEBugzilla(BugzillaBugParser):
         keywords = map(lambda s: s.strip(),
                        keywords_text.split(','))
         ret_dict['good_for_newcomers'] = ('junior-jobs' in keywords)
-        ret_dict['bite_size_tag_name'] = 'junior-jobs'
         # Remove 'JJ:' from title if present
         if ret_dict['title'].startswith("JJ:"):
             ret_dict['title'] = ret_dict['title'][3:].strip()
