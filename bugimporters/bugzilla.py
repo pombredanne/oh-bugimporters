@@ -23,6 +23,7 @@ import twisted.web.http
 import urlparse
 import logging
 
+import bugimporters.items
 from bugimporters.base import BugImporter
 from bugimporters.helpers import cached_property, string2naive_datetime
 
@@ -219,7 +220,10 @@ class BugzillaBugImporter(BugImporter):
 
             data.update({
                 'canonical_bug_link': bbp.bug_url,
-                'tracker': self.tm
+                'tracker': self.tm,
+                '_project_name': bbp.generate_bug_project_name(
+                        bug_project_name_format=self.tm.bug_project_name_format,
+                        tracker_name=self.tm.tracker_name),
             })
 
             self.data_transits['bug']['update'](data)
@@ -301,7 +305,7 @@ class BugzillaBugParser:
         status = self.get_tag_text_from_xml(xml_data, 'bug_status')
         looks_closed = status in ('RESOLVED', 'WONTFIX', 'CLOSED', 'ASSIGNED')
 
-        ret_dict = {
+        ret_dict = bugimporters.items.ParsedBug({
             'title': self.get_tag_text_from_xml(xml_data, 'short_desc'),
             'description': (self.get_tag_text_from_xml(xml_data, 'long_desc/thetext') or
                            '(Empty description)'),
@@ -314,7 +318,7 @@ class BugzillaBugParser:
             'submitter_realname': r,
             'canonical_bug_link': self.bug_url,
             'looks_closed': looks_closed
-            }
+            })
         keywords_text = self.get_tag_text_from_xml(xml_data, 'keywords') or ''
         keywords = map(lambda s: s.strip(),
                        keywords_text.split(','))
