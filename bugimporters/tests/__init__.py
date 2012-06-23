@@ -16,6 +16,8 @@ class TrackerModel(Mock):
     bitesized_text = 'easy'
     documentation_type = 'keywords'
     documentation_text = 'documentation'
+    as_appears_in_distribution = ''
+    old_trac = False
 
     def get_base_url(self):
         return self.base_url
