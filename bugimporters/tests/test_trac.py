@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime
 import os
 import twisted
 
@@ -160,9 +160,9 @@ class TestTracBugImporter(object):
         bug = {
             'project': Mock(),
             'canonical_bug_link': 'http://twistedmatrix.com/trac/ticket/1234',
-            'date_reported': datetime.utcnow(),
-            'last_touched': datetime.utcnow(),
-            'last_polled': datetime.utcnow() - timedelta(days=2),
+            'date_reported': datetime.datetime.utcnow(),
+            'last_touched': datetime.datetime.utcnow(),
+            'last_polled': datetime.datetime.utcnow() - datetime.timedelta(days=2),
             'tracker': self.tm,
         }
 
