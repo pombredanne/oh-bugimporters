@@ -100,7 +100,7 @@ some helper files.
 To add support for a new bug tracker
 ====================================
 
-Every bug tracker supported by this codebase must provide:
+Generally, every bug tracker supported by this codebase must provide:
 
 * A subclass of BugImporter, and
 * A subclass of BugParser.
@@ -112,8 +112,11 @@ the network. BugParser objects are unaware of the network.
 
 Generally, one usually only needs a single BugParser and BugImporter
 subclass per *type* of bug tracker that is supported. For example,
-
 bugimporters/github.py contains one BugImporter subclass that manages
 the downloading of data via the Github API, and it contains one
 BugParser subclass that converts data from that API into instances of
 bugimporters.items.ParsedBug, massaging data as necessary.
+
+(Note that it is possible to write a BugImporter that generates the
+ParsedBug objects without a BugParser... in theory. We don't recommend
+doing things this way, but bugimporters/google.py is an example of one.)
