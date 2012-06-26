@@ -126,3 +126,49 @@ bugimporters.items.ParsedBug, massaging data as necessary.
 (Note that it is possible to write a BugImporter that generates the
 ParsedBug objects without a BugParser... in theory. We don't recommend
 doing things this way, but bugimporters/google.py is an example of one.)
+
+The role of multiple BugParsers
+===============================
+
+A BugImporter, by default, uses one particular BugParser to process
+bug data.  For example, the Bugzilla bug importer has a generic
+Bugzilla parser that processes the XML data that Bugzilla returns.
+
+The Bugzilla bug importer is an example of a BugImporter that can work
+with any of a few different BugParser subclasses. You can see those in
+bugimporters/bugzilla.py.
+
+This is usually helpful when a specific open source community uses its
+bug tracker in some unusual way, and therefore special code is
+required to massage the data into the format of a
+bugimporters.items.ParsedBug. (For an example, see
+bugimporters/bugzilla.py and the KDEBugzilla class -- in particular,
+the generate_bug_project_name() method. This method exists because the
+KDE communities names projects in ways that we want to smooth out for
+consumers of the data, such as the OpenHatch website.)
+
+If you want to add a new custom BugParser, here is what you would do:
+
+* Find the file corresponding to the bug tracker *type* you're adding
+  a custom bug parser for. For example, if you're adding support for a
+  special Bugzilla instance, open up bugimporters/bugzilla.py in your
+  favorite text editor.
+
+* Add a new subclass of BugParser at the bottom of that file, probably
+  overriding the extract_tracker_specific_data method. Make sure to
+  subclass from the specific version of BugParser to the kind of bug
+  tracker you're modifying; for example, if you are adding custom code
+  for a special Bugzilla withi bugimporters/bugzilla.py, your new
+  class should be a subclass of BugzillaBugParser.
+
+* Write a test. For now, this package only has tests covering the Trac
+  bug importers and parsers. If you're adding a new bug parser for Trac,
+  simply::
+** Copy the test_bug_parser() into a new method
+** Change the sample data, and the assertions, for the behavior you need.
+** Run the new test. Make sure it fails.
+** Now, write a new BugParser subclass that impements the behavior you need.
+** Make sure the test passes. (Then submit it for review and inclusion!)
+
+By focusing on this test-driven workflow, you are sure that the code
+you add is required and correct.
