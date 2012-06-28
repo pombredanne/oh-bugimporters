@@ -1,0 +1,4 @@
+id,summary,reporter,owner,description,type,status,priority,milestone,component,resolution,keywords,cc,branch,branch_author,launchpad_bug
+4298,Deprecate twisted.persisted.journal,thijs,,"twisted.persisted.journal is one of the not-quite-reliable storage systems still floating around from Twisted's sordid past.  No one has any intention of finishing it (clearly, as it's been 4 years since its last change), and by current standards we probably wouldn't want it in Twisted anyway due to how far afield from Twisted's primary goals it is.
+
+It should be deprecated so we can remove it in a few more releases.",task,closed,normal,,core,fixed,easy,thijs exarkun,branches/re-deprecate-persisted-journal-4298,"cyli, amacleod, djfroofy",
