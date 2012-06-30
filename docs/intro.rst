@@ -163,12 +163,17 @@ If you want to add a new custom BugParser, here is what you would do:
 
 * Write a test. For now, this package only has tests covering the Trac
   bug importers and parsers. If you're adding a new bug parser for Trac,
-  simply::
-** Copy the test_bug_parser() into a new method
-** Change the sample data, and the assertions, for the behavior you need.
-** Run the new test. Make sure it fails.
-** Now, write a new BugParser subclass that impements the behavior you need.
-** Make sure the test passes. (Then submit it for review and inclusion!)
+  simply:
+
+  * Copy the test_bug_parser() into a new method
+
+  * Change the sample data, and the assertions, for the behavior you need.
+
+  * Run the new test. Make sure it fails.
+
+  * Now, write a new BugParser subclass that impements the behavior you need.
+
+  * Make sure the test passes. (Then submit it for review and inclusion!)
 
 By focusing on this test-driven workflow, you are sure that the code
 you add is required and correct.
