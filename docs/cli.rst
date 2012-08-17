@@ -52,3 +52,7 @@ This will read the configuration JSON file you have named, and go off
 and download bugs. When it exits, /tmp/output.json will have the
 parsed bug data.
 
+Flaws
+-----
+
+Right now, the command line interface assumes that the bug tracker is of type Trac.
