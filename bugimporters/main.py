@@ -3,6 +3,7 @@ import argparse
 import sys
 import json
 import mock
+import datetime
 import bugimporters.trac
 
 def dict2obj(d):
@@ -31,10 +32,12 @@ def main(raw_arguments):
     args = parser.parse_args(raw_arguments)
 
     json_data = json.load(open(args.input))
+    out_fd = open(args.output, 'w')
     objs = []
     for d in json_data:
         objs.append(dict2obj(d))
 
+    all_bug_data = []
     for obj in objs:
         bug_data = []
         def generate_bug_transit(bug_data=bug_data):
@@ -61,7 +64,13 @@ def main(raw_arguments):
                 pass # FIXME: Hack
         queries = [StupidQuery]
         bug_importer.process_queries(queries)
-        print "YAHOO", bug_data
+        all_bug_data.extend(bug_data)
+
+    def dthandler(obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+    json.dump([dict(x) for x in all_bug_data], out_fd, default=dthandler)
+    out_fd.close()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
