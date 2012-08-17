@@ -20,24 +20,24 @@ list of dictionaries.
 
 The dictionaries must have the following keys:
 
- * tracker_name (string)
- * base_url (string)
+* tracker_name (string)
+* base_url (string)
 
 The following key is optional, and if present, is used when annotating
 the the bug data with the project name. By default, this is the same
 as the tracker_name.
 
- * bug_project_name_format (string)
+* bug_project_name_format (string)
 
 The following keys are optional, and are used during bug data
 processing to annotate the bug data with information like if the bug
 is good for first-time contributors, or if the bug is oriented
 entirely around documentation.
 
- * bitesized_type (string)
- * bitesized_text (string)
- * documentation_type (string)
- * documentation_text (string)
+* bitesized_type (string)
+* bitesized_text (string)
+* documentation_type (string)
+* documentation_text (string)
 
 A sample valid JSON file can be found in examples/sample_configuration.json.
 
