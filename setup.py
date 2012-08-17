@@ -19,6 +19,7 @@ setup_params = dict(
         'python-dateutil',
         'decorator',
         'scrapy',
+        'argparse',
     ],
 )
 
