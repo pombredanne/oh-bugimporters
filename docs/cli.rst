@@ -1,7 +1,7 @@
 Command line interface
 ======================
 
-(Status: Vaporware)
+(Status: Partially implemented)
 
 The oh-bugimporters package has the capability to crawl remote bug
 trackers and store the parsed data in JSON files. To use this
