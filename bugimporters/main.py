@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import sys
-import json
+import yaml
 import mock
 import datetime
 import bugimporters.trac
@@ -31,10 +31,10 @@ def main(raw_arguments):
     parser.add_argument('-o', action="store", dest="output")
     args = parser.parse_args(raw_arguments)
 
-    json_data = json.load(open(args.input))
+    data = yaml.load(open(args.input))
     out_fd = open(args.output, 'w')
     objs = []
-    for d in json_data:
+    for d in data:
         objs.append(dict2obj(d))
 
     all_bug_data = []
@@ -66,10 +66,14 @@ def main(raw_arguments):
         bug_importer.process_queries(queries)
         all_bug_data.extend(bug_data)
 
-    def dthandler(obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.isoformat()
-    json.dump([dict(x) for x in all_bug_data], out_fd, default=dthandler)
+    # FIXME: Hack
+    # Remove the tracker attribute from the exported data, because we
+    # cannot export that content to properly to YAML.
+    for bug in all_bug_data:
+        if 'tracker' in bug:
+            bug['tracker'] = None
+
+    yaml.safe_dump([dict(x) for x in all_bug_data], out_fd)
     out_fd.close()
 
 if __name__ == '__main__':
