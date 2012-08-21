@@ -3,7 +3,6 @@ import argparse
 import sys
 import yaml
 import mock
-import datetime
 import bugimporters.trac
 
 def dict2obj(d):
