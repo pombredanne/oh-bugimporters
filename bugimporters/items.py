@@ -2,7 +2,7 @@ import scrapy.item
 
 class ParsedBug(scrapy.item.Item):
     # Fields beginning with an underscore are not really part of a
-    # bug, but extra information that must get processed.
+    # bug, but extra information that can be exported.
     _project_name = scrapy.item.Field()
 
     # These fields correspond to bug data
