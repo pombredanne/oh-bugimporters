@@ -46,7 +46,7 @@ Run the command line interface
 
 Run this command::
 
- ./env/bin/python bugimporters/main.py -i /tmp/configuration.yaml -o /tmp/output.yam
+ ./env/bin/python bugimporters/main.py -i /tmp/configuration.yaml -o /tmp/output.yaml
 
 This will read the configuration YAML file you have named, and go off
 and download bugs. When it exits, /tmp/output.yaml will have the
