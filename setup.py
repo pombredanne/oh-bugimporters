@@ -21,6 +21,7 @@ setup_params = dict(
         'scrapy',
         'argparse',
         'mock',
+        'PyYAML',
     ],
 )
 
