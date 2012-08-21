@@ -20,6 +20,7 @@ setup_params = dict(
         'decorator',
         'scrapy',
         'argparse',
+        'mock',
     ],
 )
 
