@@ -3,8 +3,7 @@ import argparse
 import sys
 import yaml
 import mock
-import datetime
-import bugimporters.trac
+import importlib
 
 def dict2obj(d):
     class Trivial(object):
@@ -47,7 +46,11 @@ def main(raw_arguments):
                     'update': bug_transit,
                     'delete_by_url': lambda *args: {}}
 
-        bug_importer = bugimporters.trac.SynchronousTracBugImporter(
+        module, class_name = obj.bugimporter.split('.', 1)
+        bug_import_module = importlib.import_module('bugimporters.%s' % (
+                module,))
+        bug_import_class = getattr(bug_import_module, class_name)
+        bug_importer = bug_import_class(
             obj, FakeReactorManager(),
             data_transits={'bug': generate_bug_transit(),
                            'trac': {
@@ -56,13 +59,13 @@ def main(raw_arguments):
                     'update_timeline': mock.Mock()
                     }})
         class StupidQuery(object):
-            @staticmethod
-            def get_query_url():
-                return 'http://twistedmatrix.com/trac/query?format=csv&col=id&col=summary&col=status&col=owner&col=type&col=priority&col=milestone&id=5228&order=priority' # FIXME: Hack
-            @staticmethod
+            def __init__(self, url):
+                self.url = url
+            def get_query_url(self):
+                return self.url
             def save(*args, **kwargs):
                 pass # FIXME: Hack
-        queries = [StupidQuery]
+        queries = [StupidQuery(q) for q in obj.queries]
         bug_importer.process_queries(queries)
         all_bug_data.extend(bug_data)
 
