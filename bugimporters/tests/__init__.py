@@ -16,6 +16,8 @@ class TrackerModel(Mock):
     bitesized_text = 'easy'
     documentation_type = 'keywords'
     documentation_text = 'documentation'
+    as_appears_in_distribution = ''
+    old_trac = False
 
     def get_base_url(self):
         return self.base_url
@@ -52,3 +54,13 @@ class FakeGetPage(object):
                 twisted.web.error.Error(
                 404, 'File Not Found', None)))
         return d
+
+class ObjectFromDict(object):
+    def __init__(self, data, recursive = False):
+        for key in data:
+            if recursive:
+                if type(data[key]) == type({}):
+                    data[key] = ObjectFromDict(data[key], recursive=recursive)
+                elif type(data[key]) == type([]):
+                    data[key] = [ObjectFromDict(item, recursive=recursive) for item in data[key]]
+            setattr(self, key, data[key])
