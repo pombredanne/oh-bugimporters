@@ -2,7 +2,7 @@ import datetime
 import os
 import autoresponse
 
-from bugimporters.tests import (Bug, ReactorManager, TrackerModel,
+from bugimporters.tests import (ReactorManager, TrackerModel,
         HaskellTrackerModel)
 from bugimporters.base import printable_datetime
 from bugimporters.trac import TracBugImporter, TracBugParser
@@ -13,19 +13,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Create a global variable that can be referenced both from inside tests
 # and from module level functions functions.
-all_bugs = []
-
-
-def delete_by_url(url):
-    for index, bug in enumerate(all_bugs):
-        if bug[0] == url:
-            del all_bugs[index]
-            break
 
 bug_data_transit = {
-    'get_fresh_urls': lambda *args: {},
-    'update': lambda value: all_bugs.append(Bug(value)),
-    'delete_by_url': delete_by_url,
+    'get_fresh_urls': None,
+    'update': None,
+    'delete_by_url': None,
 }
 
 trac_data_transit = {
@@ -43,8 +35,6 @@ class TestTracBugImporter(object):
         cls.tm = TrackerModel()
         cls.im = TracBugImporter(cls.tm, ReactorManager(),
                 data_transits=importer_data_transits)
-        global all_bugs
-        all_bugs = []
 
     def test_handle_query_csv(self):
         self.im.bug_ids = []
@@ -132,9 +122,6 @@ class TestTracBugImporter(object):
         return item
 
     def test_handle_bug_html_for_existing_bug(self):
-        global all_bugs
-        all_bugs = []
-
         item_first_time = self.test_handle_bug_html_for_new_bug()
         item_second_time = self.test_handle_bug_html_for_new_bug()
         assert (item_second_time['last_polled'] >
@@ -184,8 +171,6 @@ class TestTracBugParser(object):
         cls.tm = TrackerModel()
         cls.im = TracBugImporter(cls.tm, ReactorManager(),
                 data_transits=importer_data_transits)
-        global all_bugs
-        all_bugs = []
 
         # Set up the Twisted TrackerModels that will be used here.
         cls.tm = TrackerModel(
