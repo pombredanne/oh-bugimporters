@@ -1,9 +1,9 @@
 import datetime
 import os
-import twisted
+import autoresponse
 
 from bugimporters.tests import (Bug, ReactorManager, TrackerModel,
-        FakeGetPage, HaskellTrackerModel)
+        HaskellTrackerModel)
 from bugimporters.base import printable_datetime
 from bugimporters.trac import TracBugImporter, TracBugParser
 from mock import Mock
@@ -155,23 +155,19 @@ class TestTracBugImporter(object):
         self.test_handle_bug_html_for_new_bug(second_run=True)
 
     def test_bug_that_404s_is_deleted(self, monkeypatch):
-        monkeypatch.setattr(twisted.web.client, 'getPage',
-                FakeGetPage().get404)
+        bug_url = 'http://twistedmatrix.com/trac/ticket/1234'
+        ar = autoresponse.Autoresponder(url2filename={},
+                          url2errors={
+                bug_url + '?format=csv': 404,
+                })
 
-        bug = {
-            'project': Mock(),
-            'canonical_bug_link': 'http://twistedmatrix.com/trac/ticket/1234',
-            'date_reported': datetime.datetime.utcnow(),
-            'last_touched': datetime.datetime.utcnow(),
-            'last_polled': datetime.datetime.utcnow() - datetime.timedelta(days=2),
-            'tracker': self.tm,
-        }
+        all_bugs = [(bug_url, None)]
 
-        global all_bugs
-        all_bugs = [[bug['canonical_bug_link'], bug]]
+        request_iterable = self.im.process_bugs(all_bugs)
+        items = ar.respond_recursively(request_iterable)
 
-        self.im.process_bugs(all_bugs)
-        assert len(all_bugs) == 0
+        assert len(items) == 1
+        assert items[0]['_deleted']
 
     def test_bug_with_difficulty_easy_is_bitesize(self):
         tbp = TracBugParser(

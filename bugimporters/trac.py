@@ -167,7 +167,7 @@ class TracBugImporter(BugImporter):
             r = scrapy.http.Request(
                 url=tbp.bug_csv_url,
                 callback=self.handle_bug_csv_response,
-                errback=self.errback_bug_data)
+                errback=lambda failure, tbp=tbp: self.errback_bug_data(failure, tbp))
             r.meta['tbp'] = tbp
             yield r
 
@@ -184,7 +184,7 @@ class TracBugImporter(BugImporter):
         r = scrapy.http.Request(
             url=tbp.bug_html_url,
             callback=self.handle_bug_html_response,
-            errback=self.errback_bug_data)
+            errback=lambda failure, tbp=tbp: self.errback_bug_data(failure, tbp))
         r.meta['tbp'] = tbp
         return r
 
@@ -196,13 +196,9 @@ class TracBugImporter(BugImporter):
         # the bug if it occurs.
         if failure.check(twisted.web.error.Error) and failure.value.status == \
                 twisted.web.http.NOT_FOUND:
-            self.data_transits['bug']['delete_by_url'](tbp.bug_url)
-            # To keep the callback chain happy, explicity return None.
-            return None
-        elif failure.check(twisted.web.client.PartialDownloadError):
-            # Log and squelch
-            logging.warn(failure)
-            return tbp
+            return bugimporters.items.ParsedBug(
+                canonical_bug_link=tbp.bug_url,
+                _deleted=True)
         else:
             # Pass the Failure on.
             return failure
