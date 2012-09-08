@@ -50,10 +50,10 @@ class TestTracBugImporter(object):
         self.im.bug_ids = []
         cached_csv_filename = os.path.join(HERE, 'sample-data',
                 'twisted-trac-query-easy-bugs-on-2011-04-13.csv')
-        self.im.handle_query_csv(unicode(
-                open(cached_csv_filename).read(), 'utf-8'))
+        items = list(self.im.handle_query_csv(unicode(
+                open(cached_csv_filename).read(), 'utf-8')))
 
-        assert len(self.im.bug_ids) == 18
+        assert len(items) == 18
 
     def test_bug_parser(self):
         ### As an aside:
