@@ -96,13 +96,7 @@ class TestTracBugImporter(object):
         assert returned_data['title'] == 'Deprecate twisted.persisted.journal'
         assert returned_data['good_for_newcomers']
 
-    def test_handle_bug_html_for_new_bug(self, second_run=False):
-        if second_run:
-            assert len(all_bugs) == 1
-            old_last_polled = all_bugs[0].last_polled
-        else:
-            assert len(all_bugs) == 0
-
+    def test_handle_bug_html_for_new_bug(self):
         tbp = TracBugParser(
                 bug_url='http://twistedmatrix.com/trac/ticket/4298')
         tbp.bug_csv = {
@@ -128,31 +122,23 @@ class TestTracBugImporter(object):
 
         cached_html_filename = os.path.join(HERE, 'sample-data',
                 'twisted-trac-4298-on-2010-04-02.html')
-        self.im.handle_bug_html(unicode(
-            open(cached_html_filename).read(), 'utf-8'), tbp)
+        item = self.im.handle_bug_html(unicode(
+                open(cached_html_filename).read(), 'utf-8'), tbp)
 
         # Check there is now one Bug.
-
-        bug = all_bugs[0]
-
-        if second_run:
-            assert len(all_bugs) == 2
-            bug = all_bugs[1]
-            assert bug.last_polled > old_last_polled
-        else:
-            assert len(all_bugs) == 1
-            bug = all_bugs[0]
-
-        assert bug.title == 'Deprecate twisted.persisted.journal'
-        assert bug.submitter_username == 'thijs'
-        assert bug._tracker_name == self.tm.tracker_name
+        assert item['title'] == 'Deprecate twisted.persisted.journal'
+        assert item['submitter_username'] == 'thijs'
+        assert item['_tracker_name'] == self.tm.tracker_name
+        return item
 
     def test_handle_bug_html_for_existing_bug(self):
         global all_bugs
         all_bugs = []
 
-        self.test_handle_bug_html_for_new_bug()
-        self.test_handle_bug_html_for_new_bug(second_run=True)
+        item_first_time = self.test_handle_bug_html_for_new_bug()
+        item_second_time = self.test_handle_bug_html_for_new_bug()
+        assert (item_second_time['last_polled'] >
+                item_first_time['last_polled'])
 
     def test_bug_that_404s_is_deleted(self, monkeypatch):
         bug_url = 'http://twistedmatrix.com/trac/ticket/1234'
