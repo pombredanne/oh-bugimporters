@@ -460,5 +460,6 @@ class TracSpider(scrapy.spider.BaseSpider):
                 yield request
 
     def __init__(self, input_filename=None):
-        with open(input_filename) as f:
-            self.input_data = yaml.load(f)
+        if input_filename is not None:
+            with open(input_filename) as f:
+                self.input_data = yaml.load(f)
