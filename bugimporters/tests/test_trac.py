@@ -5,7 +5,7 @@ import autoresponse
 from bugimporters.tests import (ReactorManager, TrackerModel,
         HaskellTrackerModel)
 from bugimporters.base import printable_datetime
-from bugimporters.trac import TracBugImporter, TracBugParser
+from bugimporters.trac import TracBugImporter, TracBugParser, TracSpider
 from mock import Mock
 
 
@@ -35,6 +35,30 @@ class TestTracBugImporter(object):
         cls.tm = TrackerModel()
         cls.im = TracBugImporter(cls.tm, ReactorManager(),
                 data_transits=importer_data_transits)
+
+    def test_top_to_bottom(self):
+        spider = TracSpider()
+        self.tm.bugimporter = 'trac.TracBugImporter'
+        self.tm.tracker_name = 'Twisted'
+        self.tm.bitesized_type = ''
+        self.tm.documentation_type = ''
+        self.tm.base_url = 'http://twistedmatrix.com/trac/'
+        self.tm.queries = ['http://twistedmatrix.com/trac/query?id=5858&format=csv']
+        spider.input_data = [self.tm.__dict__]
+        url2filename = {'http://twistedmatrix.com/trac/query?id=5858&format=csv':
+                            os.path.join(HERE, 'sample-data', 'twisted-trac-query-for-id=5858.csv'),
+                        'http://twistedmatrix.com/trac/ticket/5858?format=csv':
+                            os.path.join(HERE, 'sample-data', 'twisted-trac-5858.csv'),
+                        'http://twistedmatrix.com/trac/ticket/5858':
+                            os.path.join(HERE, 'sample-data', 'twisted-trac-5858.html'),
+                        }
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+        assert len(items) == 1
+        item = items[0]
+        assert item['canonical_bug_link'] == (
+            'http://twistedmatrix.com/trac/ticket/5858')
 
     def test_handle_query_csv(self):
         self.im.bug_ids = []

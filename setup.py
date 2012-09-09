@@ -23,7 +23,7 @@ setup_params = dict(
         'mock',
         'PyYAML',
         'importlib',
-        'autoresponse',
+        'autoresponse>=0.2',
     ],
 )
 

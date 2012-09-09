@@ -186,7 +186,7 @@ class TracBugImporter(BugImporter):
             callback=self.handle_bug_html_response,
             errback=lambda failure, tbp=tbp: self.errback_bug_data(failure, tbp))
         r.meta['tbp'] = tbp
-        return r
+        yield r
 
     def errback_bug_data(self, failure, tbp):
         # For some unknown reason, some trackers choose to delete some bugs
