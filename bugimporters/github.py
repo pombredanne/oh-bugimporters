@@ -15,68 +15,47 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import importlib
 import json
-import logging
+import scrapy.http
+import scrapy.spider
 
 import bugimporters.items
-from bugimporters.base import BugImporter
+from bugimporters.base import BugImporter, printable_datetime
 from bugimporters.helpers import string2naive_datetime
-
 
 class GitHubBugImporter(BugImporter):
     def process_queries(self, queries):
         for query in queries:
             url = query.get_query_url()
 
-            logging.debug('querying %s', url)
-            self.add_url_to_waiting_list(
+            yield scrapy.http.Request(
                 url=url,
-                callback=self.handle_bug_list)
+                callback=self.handle_bug_list_response)
 
-            query.last_polled = datetime.datetime.utcnow()
-            query.save()
+    def handle_bug_list_response(self, response):
+        issue_list = json.loads(response.body)
 
-        self.push_urls_onto_reactor()
-
-    def handle_bug_list(self, data):
-        """
-        Callback for a collection of bugs.
-        """
-        issue_list = json.loads(data)
-
-        for bug in issue_list['issues']:
-            self.handle_bug_json(bug)
+        bugs = []
+        for bug in issue_list:
+            bugs.append(self.handle_bug(bug))
+        return bugs
 
     def process_bugs(self, bug_list):
-        logging.debug('process_bugs')
-        if not bug_list:
-            self.determine_if_finished()
-            return
-
         for bug_url, bug_data in bug_list:
-            logging.debug('querying %s', bug_url)
-            self.add_url_to_waiting_list(
+            r = scrapy.http.Request(
                 url=bug_url,
-                callback=self.handle_bug_show)
+                callback=self.handle_bug_show_response)
+            yield r
 
-        self.push_urls_onto_reactor()
+    def handle_bug_show_response(self, response):
+        bug_data = json.loads(response.body)
+        return self.handle_bug(bug_data)
 
-    def handle_bug_show(self, data):
-        self.handle_bug_json(json.loads(data)['issue'])
-
-    def handle_bug_json(self, bug_json):
-        gbp = self.bug_parser(self.tm, self.tm.github_name, self.tm.github_repo)
-
-        data = gbp.parse(bug_json)
-        data.update({
-            'tracker': self.tm
-        })
-
-        self.data_transits['bug']['update'](data)
-
-    def determine_if_finished(self):
-        logging.debug('determine_if_finished')
-        self.finish_import()
+    def handle_bug(self, bug_data):
+        gbp = GitHubBugParser(self.tm, self.tm.github_name,
+            self.tm.github_repo)
+        return gbp.parse(bug_data)
 
 class GitHubBugParser(object):
     def __init__(self, tm, github_name, github_repo):
@@ -85,17 +64,21 @@ class GitHubBugParser(object):
         self.github_repo = github_repo
 
     @staticmethod
-    def github_date_to_datetime(date_string):
-        return string2naive_datetime(date_string)
-
-    @staticmethod
     def github_count_people_involved(issue):
-        if issue['comments'] == 0:
-            # FIXME: what about assignment?
-            return 1
+        # The reporter counts as a person.
+        people = 1
 
-        # FIXME: pull comments to get an accurate count
-        return 1
+        if (issue['assignee'] and
+            issue['assignee']['login'] != issue['user']['login']):
+            people += 1
+
+        if issue['comments'] > 0:
+            # FIXME: pull comments to get an accurate count; for now,
+            # we'll just bump the involved people count even though
+            # the commenter might be the reporting user.
+            people += 1
+
+        return people
 
     def parse(self, issue):
         parsed = bugimporters.items.ParsedBug({
@@ -103,22 +86,53 @@ class GitHubBugParser(object):
             'description': issue['body'],
             'status': issue['state'],
             'people_involved': self.github_count_people_involved(issue),
-            'date_reported': self.github_date_to_datetime(issue['created_at']),
-            'last_touched': self.github_date_to_datetime(issue['updated_at']),
-            'submitter_username': issue['user'],
-            'submitter_realname': '', # FIXME: can't get this from GitHub?
-            'canonical_bug_link':
-                'http://github.com/api/v2/json/issues/show/%s/%s/%d' % (
-                    self.github_name, self.github_repo, issue['number'],
-                ),
+            'date_reported': printable_datetime(string2naive_datetime(issue['created_at'])),
+            'last_touched': printable_datetime(string2naive_datetime(issue['updated_at'])),
+            'submitter_username': issue['user']['login'],
+            'submitter_realname': '', # FIXME: can get this from ['user']['url']
+            'canonical_bug_link': issue['url'],
             'looks_closed': (issue['state'] == 'closed'),
+            'last_polled': printable_datetime(),
             '_project_name': self.tm.tracker_name,
         })
 
+        issue_labels = [l['name'] for l in issue['labels']]
+
         b_list = self.tm.bitesized_tag.split(',')
-        parsed['good_for_newcomers'] = any(b in issue['labels'] for b in b_list)
+        parsed['good_for_newcomers'] = any(b in issue_labels for b in b_list)
 
         d_list = self.tm.documentation_tag.split(',')
-        parsed['concerns_just_documentation'] = any(d in issue['labels'] for d in d_list)
+        parsed['concerns_just_documentation'] = any(d in issue_labels for d in d_list)
 
         return parsed
+
+class GitHubSpider(scrapy.spider.BaseSpider):
+    name = "All GitHub repos"
+
+    def __init__(self, input_filename=None):
+        if input_filename is not None:
+            with open(input_filename) as f:
+                self.input_data = yaml.load(f)
+
+    def start_requests(self):
+        objs = []
+        for d in self.input_data:
+            objs.append(bugimporters.main.dict2obj(d))
+
+        for obj in objs:
+            module, class_name = obj.bugimporter.split('.', 1)
+            bug_import_module = importlib.import_module(
+                'bugimporters.%s' % module)
+            bug_import_class = getattr(bug_import_module, class_name)
+            bug_importer = bug_import_class(
+                obj, bugimporters.main.FakeReactorManager())
+
+            class StupidQuery(object):
+                def __init__(self, url):
+                    self.url = url
+                def get_query_url(self):
+                    return self.url
+
+            queries = [StupidQuery(q) for q in obj.queries]
+            for request in bug_importer.process_queries(queries):
+                yield request
