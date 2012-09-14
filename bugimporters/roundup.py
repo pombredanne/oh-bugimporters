@@ -95,7 +95,7 @@ class RoundupBugImporter(BugImporter):
             '_tracker_name': self.tm.tracker_name
         })
 
-        yield bugimporters.items.ParsedBug(data)
+        return bugimporters.items.ParsedBug(data)
 
 
 class RoundupBugParser(object):

@@ -83,13 +83,10 @@ class TestRoundupBugImporter(object):
         rbp = bugimporters.roundup.RoundupBugParser(
                 bug_url='http://mercurial.selenic.com/bts/issue1550')
         # Parse HTML document as if we got it from the web
-        items = list(self.im.handle_bug_html(open(os.path.join(
-                        HERE, 'sample-data',
-                        'closed-mercurial-bug.html')).read(), rbp ))
+        bug = self.im.handle_bug_html(open(os.path.join(
+                    HERE, 'sample-data',
+                    'closed-mercurial-bug.html')).read(), rbp )
 
-        assert(1 == len(items))
-
-        bug = items[0]
         self.assertEqual(bug['_project_name'], 'Mercurial')
         self.assertEqual(bug['title'], "help('modules') broken by several 3rd party libraries (svn patch attached)")
         self.assertEqual(bug['description'], """Instead of listing installed modules, help('modules') prints a "please
@@ -169,11 +166,9 @@ class TestRoundupBugsFromPythonProject(object):
         rbp = bugimporters.roundup.RoundupBugParser(
                 bug_url='http://bugs.python.org/issue8264')
         # Parse HTML document as if we got it from the web
-        items = list(self.im.handle_bug_html(open(os.path.join(
+        bug = self.im.handle_bug_html(open(os.path.join(
                         HERE, 'sample-data',
-                        'python-roundup-8264.html')).read(), rbp))
+                        'python-roundup-8264.html')).read(), rbp)
 
-        self.assertEqual(len(items), 1)
-        bug = items[0]
         self.assertEqual(bug['_project_name'], 'Python')
         self.assertEqual(bug['title'], "hasattr doensn't show private (double underscore) attributes exist")
