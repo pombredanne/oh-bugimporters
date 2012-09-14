@@ -71,17 +71,14 @@ class RoundupBugImporter(BugImporter):
 
     def process_bugs(self, bug_list):
         for bug_url, _ in bug_list:
-            # Create a RoundupBugParser instance to store the bug data
-            rbp = RoundupBugParser(bug_url)
-
             r = scrapy.http.Request(
-                url=rbp.bug_html_url,
+                url=bug_url,
                 callback=self.handle_bug_html_response)
-            r.meta['rbp'] = rbp
             yield r
 
     def handle_bug_html_response(self, response):
-        rbp = response.meta['rbp']
+        # Create a RoundupBugParser instance to store the bug data
+        rbp = RoundupBugParser(response.request.url)
         return self.handle_bug_html(response.body, rbp)
 
     def handle_bug_html(self, bug_html, rbp):
