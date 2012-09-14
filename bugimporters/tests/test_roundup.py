@@ -1,12 +1,8 @@
 import datetime
 import os
-import mock
-import twisted
 
 import bugimporters.roundup
-from bugimporters.tests import (Bug, ReactorManager, TrackerModel,
-        FakeGetPage, ObjectFromDict)
-from mock import Mock
+from bugimporters.tests import ObjectFromDict
 import bugimporters.tests
 import bugimporters.trac
 import autoresponse
