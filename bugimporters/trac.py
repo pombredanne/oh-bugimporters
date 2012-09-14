@@ -442,12 +442,7 @@ class TracSpider(scrapy.spider.BaseSpider):
             bug_import_class = getattr(bug_import_module, class_name)
             bug_importer = bug_import_class(
                 obj, bugimporters.main.FakeReactorManager(),
-                data_transits={'bug': None,
-                               'trac': {
-                        'get_bug_times': None,
-                        'get_timeline_url': None,
-                        'update_timeline': None,
-                        }})
+                data_transits=None)
             class StupidQuery(object):
                 def __init__(self, url):
                     self.url = url

@@ -19,21 +19,6 @@ class TestRoundupBugImporter(object):
         assert x == y
 
     def setup_class(cls):
-        # Nonsense data_transits, that will soon all go away anyway
-        bug_data_transit = {
-            'get_fresh_urls': lambda *args: {},
-            'update': lambda value: None,
-            'delete_by_url': lambda value: None,
-            }
-
-        trac_data_transit = {
-            'get_bug_times': lambda url: (None, None),
-            'get_timeline_url': Mock(),
-            'update_timeline': Mock()
-            }
-
-        importer_data_transits = {'bug': bug_data_transit, 'trac': trac_data_transit}
-
         # Set up the RoundupTrackerModel that will be used here.
         cls.tm = ObjectFromDict(dict(
                 tracker_name='Mercurial',
@@ -50,7 +35,7 @@ class TestRoundupBugImporter(object):
         cls.im = bugimporters.roundup.RoundupBugImporter(
             cls.tm,
             bugimporters.tests.ReactorManager(),
-            data_transits=importer_data_transits)
+            data_transits=None)
 
     def test_bug_import_works_with_comma_separated_closed_status(self):
         # First, change the environment -- pretend the user on the web interface
@@ -130,21 +115,6 @@ class TestRoundupBugsFromPythonProject(object):
         assert x == y
 
     def setup_class(cls):
-        # Nonsense data_transits, that will soon all go away anyway
-        bug_data_transit = {
-            'get_fresh_urls': lambda *args: {},
-            'update': lambda value: None,
-            'delete_by_url': lambda value: None,
-            }
-
-        trac_data_transit = {
-            'get_bug_times': lambda url: (None, None),
-            'get_timeline_url': Mock(),
-            'update_timeline': Mock()
-            }
-
-        importer_data_transits = {'bug': bug_data_transit, 'trac': trac_data_transit}
-
         # Set up the RoundupTrackerModel that will be used here.
         cls.tm = ObjectFromDict(dict(
                 tracker_name='Python',
@@ -159,7 +129,7 @@ class TestRoundupBugsFromPythonProject(object):
         cls.im = bugimporters.roundup.RoundupBugImporter(
             cls.tm,
             bugimporters.tests.ReactorManager(),
-            data_transits=importer_data_transits)
+            data_transits=None)
 
     def test_bug_import(self):
         # Check the number of Bugs present.
