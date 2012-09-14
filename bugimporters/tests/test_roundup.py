@@ -4,7 +4,7 @@ import os
 import bugimporters.roundup
 from bugimporters.tests import ObjectFromDict
 import bugimporters.tests
-import bugimporters.trac
+import bugimporters.main
 import autoresponse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -44,7 +44,7 @@ class TestRoundupBugImporter(object):
         assert item['looks_closed'] == True
 
     def test_top_to_bottom(self):
-        spider = bugimporters.trac.TracSpider()
+        spider = bugimporters.main.BugImportSpider()
         spider.input_data = [self.tm.__dict__]
         url2filename = {'http://mercurial.selenic.com/bts/issue?@action=export_csv&@columns=id,activity,title,creator,status&@sort=-activity&@group=priority&@filter=status,assignedto&@pagesize=50&@startwith=0&status=-1,1,2,3,4,5,6,7,9,10':
                             os.path.join(HERE, 'sample-data', 'fake-mercurial-csv.csv'),
