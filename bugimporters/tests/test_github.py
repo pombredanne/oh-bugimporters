@@ -45,8 +45,6 @@ class TestGitHubBugImporter(object):
         bug = bugs[0]
         self.assertEqual(bug['canonical_bug_link'],
             'https://api.github.com/repos/openhatch/tests/issues/42')
-        self.assertEqual(bug['canonical_bug_link'],
-            'https://api.github.com/repos/openhatch/tests/issues/42')
         self.assertEqual(bug['title'], 'yo dawg')
         self.assertEqual(bug['description'], 'this issue be all up in ya biz-nass.')
         self.assertEqual(bug['status'], 'open')
@@ -89,8 +87,6 @@ class TestGitHubBugImporter(object):
         bug = bugs[0]
         self.assertEqual(bug['canonical_bug_link'],
             'https://api.github.com/repos/openhatch/tests/issues/42')
-        self.assertEqual(bug['canonical_bug_link'],
-            'https://api.github.com/repos/openhatch/tests/issues/42')
         self.assertEqual(bug['title'], 'yo dawg')
         self.assertEqual(bug['description'], 'this issue be all up in ya biz-nass.')
         self.assertEqual(bug['status'], 'closed')
@@ -122,8 +118,6 @@ class TestGitHubBugImporter(object):
         self.assertEqual(len(bugs), 1)
 
         bug = bugs[0]
-        self.assertEqual(bug['canonical_bug_link'],
-            'https://api.github.com/repos/openhatch/tests/issues/42')
         self.assertEqual(bug['canonical_bug_link'],
             'https://api.github.com/repos/openhatch/tests/issues/42')
         self.assertEqual(bug['title'], 'yo dawg')
