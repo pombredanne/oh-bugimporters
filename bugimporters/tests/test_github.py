@@ -5,7 +5,7 @@ import os
 from bugimporters.base import printable_datetime
 from bugimporters.github import GitHubBugImporter
 import bugimporters.main
-from bugimporters.tests import ReactorManager, TrackerModel
+from bugimporters.tests import TrackerModel
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +17,7 @@ class TestGitHubBugImporter(object):
 
     def setup_class(cls):
         cls.tm = TrackerModel()
-        cls.im = GitHubBugImporter(cls.tm, ReactorManager())
+        cls.im = GitHubBugImporter(cls.tm)
 
     def test_top_to_bottom_open(self):
         spider = bugimporters.main.BugImportSpider()
