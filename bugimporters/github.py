@@ -94,12 +94,14 @@ class GitHubBugParser(object):
             '_project_name': self.tm.tracker_name,
         })
 
-        issue_labels = [l['name'] for l in issue['labels']]
+        issue_labels = set([
+            l['name'] for l in issue['labels']
+        ])
 
         b_list = self.tm.bitesized_tag.split(',')
-        parsed['good_for_newcomers'] = any(b in issue_labels for b in b_list)
+        parsed['good_for_newcomers'] = not issue_labels.isdisjoint(b_list)
 
         d_list = self.tm.documentation_tag.split(',')
-        parsed['concerns_just_documentation'] = any(d in issue_labels for d in d_list)
+        parsed['concerns_just_documentation'] = not issue_labels.isdisjoint(d_list)
 
         return parsed
