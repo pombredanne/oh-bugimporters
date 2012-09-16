@@ -36,10 +36,8 @@ class GitHubBugImporter(BugImporter):
     def handle_bug_list_response(self, response):
         issue_list = json.loads(response.body)
 
-        bugs = []
         for bug in issue_list:
-            bugs.append(self.handle_bug(bug))
-        return bugs
+            yield self.handle_bug(bug)
 
     def process_bugs(self, bug_list):
         for bug_url, bug_data in bug_list:
