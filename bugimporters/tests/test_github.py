@@ -3,7 +3,8 @@ import datetime
 import os
 
 from bugimporters.base import printable_datetime
-from bugimporters.github import GitHubBugImporter, GitHubSpider
+from bugimporters.github import GitHubBugImporter
+import bugimporters.main
 from bugimporters.tests import ReactorManager, TrackerModel
 
 
@@ -19,7 +20,7 @@ class TestGitHubBugImporter(object):
         cls.im = GitHubBugImporter(cls.tm, ReactorManager())
 
     def test_top_to_bottom_open(self):
-        spider = GitHubSpider()
+        spider = bugimporters.main.BugImportSpider()
         self.tm.bugimporter = 'github.GitHubBugImporter'
         self.tm.tracker_name = 'openhatch tests'
         self.tm.github_name = 'openhatch'
@@ -63,7 +64,7 @@ class TestGitHubBugImporter(object):
         self.assertEqual(bug['looks_closed'], False)
 
     def test_top_to_bottom_closed(self):
-        spider = GitHubSpider()
+        spider = bugimporters.main.BugImportSpider()
         self.tm.bugimporter = 'github.GitHubBugImporter'
         self.tm.tracker_name = 'openhatch tests'
         self.tm.github_name = 'openhatch'

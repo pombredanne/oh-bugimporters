@@ -105,34 +105,3 @@ class GitHubBugParser(object):
         parsed['concerns_just_documentation'] = any(d in issue_labels for d in d_list)
 
         return parsed
-
-class GitHubSpider(scrapy.spider.BaseSpider):
-    name = "All GitHub repos"
-
-    def __init__(self, input_filename=None):
-        if input_filename is not None:
-            with open(input_filename) as f:
-                self.input_data = yaml.load(f)
-
-    def start_requests(self):
-        objs = []
-        for d in self.input_data:
-            objs.append(bugimporters.main.dict2obj(d))
-
-        for obj in objs:
-            module, class_name = obj.bugimporter.split('.', 1)
-            bug_import_module = importlib.import_module(
-                'bugimporters.%s' % module)
-            bug_import_class = getattr(bug_import_module, class_name)
-            bug_importer = bug_import_class(
-                obj, bugimporters.main.FakeReactorManager())
-
-            class StupidQuery(object):
-                def __init__(self, url):
-                    self.url = url
-                def get_query_url(self):
-                    return self.url
-
-            queries = [StupidQuery(q) for q in obj.queries]
-            for request in bug_importer.process_queries(queries):
-                yield request
