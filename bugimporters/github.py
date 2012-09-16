@@ -88,7 +88,7 @@ class GitHubBugParser(object):
             'last_touched': printable_datetime(string2naive_datetime(issue['updated_at'])),
             'submitter_username': issue['user']['login'],
             'submitter_realname': '', # FIXME: can get this from ['user']['url']
-            'canonical_bug_link': issue['url'],
+            'canonical_bug_link': issue['html_url'],
             'looks_closed': (issue['state'] == 'closed'),
             'last_polled': printable_datetime(),
             '_project_name': self.tm.tracker_name,

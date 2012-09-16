@@ -54,7 +54,7 @@ class TestGitHubBugImporter(object):
         self.assertEqual(bug['submitter_username'], 'openhatch')
         self.assertEqual(bug['submitter_realname'], '')
         self.assertEqual(bug['canonical_bug_link'],
-            'https://api.github.com/repos/openhatch/tests/issues/42')
+            'https://github.com/openhatch/tests/issues/42')
         self.assertEqual(bug['good_for_newcomers'], True)
         self.assertEqual(bug['concerns_just_documentation'], False)
         self.assertEqual(bug['looks_closed'], False)
@@ -94,7 +94,7 @@ class TestGitHubBugImporter(object):
         self.assertEqual(bug['submitter_username'], 'openhatch')
         self.assertEqual(bug['submitter_realname'], '')
         self.assertEqual(bug['canonical_bug_link'],
-            'https://api.github.com/repos/openhatch/tests/issues/42')
+            'https://github.com/openhatch/tests/issues/42')
         self.assertEqual(bug['good_for_newcomers'], True)
         self.assertEqual(bug['concerns_just_documentation'], False)
         self.assertEqual(bug['looks_closed'], True)
@@ -125,7 +125,7 @@ class TestGitHubBugImporter(object):
         self.assertEqual(bug['submitter_username'], 'openhatch')
         self.assertEqual(bug['submitter_realname'], '')
         self.assertEqual(bug['canonical_bug_link'],
-            'https://api.github.com/repos/openhatch/tests/issues/42')
+            'https://github.com/openhatch/tests/issues/42')
         self.assertEqual(bug['good_for_newcomers'], True)
         self.assertEqual(bug['concerns_just_documentation'], False)
         self.assertEqual(bug['looks_closed'], False)
