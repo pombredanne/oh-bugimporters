@@ -52,7 +52,18 @@ def main_worker(data):
                     'update': bug_transit,
                     'delete_by_url': lambda *args: {}}
 
-        module, class_name = obj.bugimporter.split('.', 1)
+        bugimporter_aliases = {
+            'trac': 'trac.TracBugImporter',
+            'roundup': 'roundup.RoundupBugImporter',
+            'github': 'github.GitHubBugImporter',
+            'google': 'google.GoogleBugImporter',
+            }
+
+        raw_bug_importer = obj.bugimporter
+        if '.' not in raw_bug_importer:
+            raw_bug_importer = bugimporter_aliases[raw_bug_importer]
+
+        module, class_name = raw_bug_importer.split('.', 1)
         bug_import_module = importlib.import_module('bugimporters.%s' % (
                 module,))
         bug_import_class = getattr(bug_import_module, class_name)
@@ -94,7 +105,18 @@ class BugImportSpider(scrapy.spider.BaseSpider):
             objs.append(dict2obj(d))
 
         for obj in objs:
-            module, class_name = obj.bugimporter.split('.', 1)
+            bugimporter_aliases = {
+                'trac': 'trac.TracBugImporter',
+                'roundup': 'roundup.RoundupBugImporter',
+                'github': 'github.GitHubBugImporter',
+                'google': 'google.GoogleBugImporter',
+                }
+
+            raw_bug_importer = obj.bugimporter
+            if '.' not in raw_bug_importer:
+                raw_bug_importer = bugimporter_aliases[raw_bug_importer]
+
+            module, class_name = raw_bug_importer.split('.', 1)
             bug_import_module = importlib.import_module('bugimporters.%s' % (
                     module,))
             bug_import_class = getattr(bug_import_module, class_name)
