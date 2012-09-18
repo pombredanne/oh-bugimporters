@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import datetime
 import scrapy.http
 
 from atom.core import Parse
@@ -38,7 +37,6 @@ class GoogleBugImporter(BugImporter):
 
     def process_queries(self, queries):
         # Add all the queries to the waiting list
-
         for query in queries:
             r = scrapy.http.Request(
                 url=query.get_query_url(),
@@ -76,27 +74,21 @@ class GoogleBugImporter(BugImporter):
         return self.process_bugs(bug_dict.items())
 
     def process_bugs(self, bug_list):
-        # If there are no bug URLs, finish now.
-        if not bug_list:
-            self.determine_if_finished()
-            return
-
         for bug_url, bug_atom in bug_list:
-            # Create a GoogleBugParser instance to store the bug data.
-            gbp = GoogleBugParser(bug_url)
-
             if bug_atom:
                 # We already have the data from a query.
-                yield self.handle_bug_atom(bug_atom, gbp)
+                yield self.handle_bug_atom(
+                    bug_atom, GoogleBugParser(bug_url))
             else:
                 # Fetch the bug data.
-                self.add_url_to_waiting_list(
-                        url=gbp.bug_atom_url,
-                        callback=self.handle_bug_atom,
-                        c_args={'gbp': gbp})
+                yield scrapy.http.Request(
+                    url=bug_url,
+                    callback=self.handle_bug_atom)
 
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+    def handle_bug_atom_response(self, response):
+        # Create a GoogleBugParser instance to store the bug data.
+        gbp = GoogleBugParser(response.request.url)
+        return self.handle_bug_atom(response.body, gbp)
 
     def handle_bug_atom(self, bug_atom, gbp):
         # Pass the GoogleBugParser the Atom data
@@ -110,14 +102,6 @@ class GoogleBugImporter(BugImporter):
         })
 
         return bugimporters.items.ParsedBug(data)
-
-    def determine_if_finished(self):
-        # If we got here then there are no more URLs in the waiting list.
-        # So if self.bug_ids is also empty then we are done.
-        if self.query_feeds:
-            self.prepare_bug_urls()
-        else:
-            self.finish_import()
 
 
 class GoogleBugParser(object):
