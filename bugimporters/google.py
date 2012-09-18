@@ -185,8 +185,8 @@ class GoogleBugParser(object):
                 'status': status,
                 'importance': self.google_find_label_type(issue.label, 'Priority'),
                 'people_involved': self.google_count_people_involved(issue),
-                'date_reported': self.google_date_to_datetime(issue.published.text),
-                'last_touched': self.google_date_to_datetime(issue.updated.text),
+                'date_reported': self.google_date_to_datetime(issue.published.text).isoformat(),
+                'last_touched': self.google_date_to_datetime(issue.updated.text).isoformat(),
                 'submitter_username': author.name.text,
                 'submitter_realname': '', # Can't get this from Google
                 'canonical_bug_link': self.bug_url,
