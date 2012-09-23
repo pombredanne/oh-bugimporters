@@ -12,6 +12,7 @@ setup_params = dict(
     install_requires=[
         'gdata',
         'lxml',
+        'cssselect',
         'pyopenssl',
         'unicodecsv',
         'feedparser',
