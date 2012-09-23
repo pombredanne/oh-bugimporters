@@ -32,7 +32,7 @@ setup_params = dict(
 try:
     import importlib
 except ImportError:
-    install_requires.append('importlib')
+    setup_params['install_requires'].append('importlib')
 
 
 if __name__ == '__main__':
