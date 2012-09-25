@@ -384,12 +384,12 @@ class TracBugParser(object):
 
         all_people = set(TracBugParser.all_people_in_changes(self.bug_html))
         all_people.add(page_metadata['Reported by:'])
-        all_people.update(
-            map(lambda x: x.strip(),
-                page_metadata.get('Cc', '').split(',')))
-        all_people.update(
-            map(lambda x: x.strip(),
-                page_metadata.get('Cc:', '').split(',')))
+        if 'Cc' in page_metadata:
+            all_people.update(
+                map(lambda x: x.strip(), page_metadata['Cc'].split(',')))
+        if 'Cc:' in page_metadata:
+            all_people.update(
+                map(lambda x: x.strip(), page_metadata['Cc:'].split(',')))
         try:
             assignee = page_metadata['Assigned to:']
         except KeyError:

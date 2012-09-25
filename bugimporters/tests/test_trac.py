@@ -256,7 +256,7 @@ class TestTracBugParser(object):
                   'description': "This package hasn't been touched in 4 years which either means it's stable or not being used at all. Let's deprecate it (also see #4111).",
                   'status': 'new',
                   'importance': 'normal',
-                  'people_involved': 4,
+                  'people_involved': 3,
                   # FIXME: Need time zone
                   'date_reported': printable_datetime(
                 datetime.datetime(2010, 2, 23, 0, 46, 30)),
@@ -303,7 +303,7 @@ class TestTracBugParser(object):
                   'description': "This package hasn't been touched in 4 years which either means it's stable or not being used at all. Let's deprecate it (also see #4111).",
                   'status': 'new',
                   'importance': 'normal',
-                  'people_involved': 5,
+                  'people_involved': 4,
                   # FIXME: Need time zone
                   'date_reported': printable_datetime(
                 datetime.datetime(2010, 2, 22, 19, 46, 30)),
@@ -351,7 +351,7 @@ class TestTracBugParser(object):
                   'description': u"This package hasn't been touched in 4 years which either means it's stable or not being used at all. Let's deprecate it (also see #4111).",
                   'status': 'new',
                   'importance': 'trivial',
-                  'people_involved': 5,
+                  'people_involved': 4,
                   # FIXME: Need time zone
                   'date_reported': printable_datetime(
                 datetime.datetime(2010, 2, 22, 19, 46, 30)),
@@ -398,7 +398,7 @@ class TestTracBugParser(object):
                   'description': "This package hasn't been touched in 4 years which either means it's stable or not being used at all. Let's deprecate it (also see #4111).",
                   'status': 'new',
                   'importance': 'normal',
-                  'people_involved': 5,
+                  'people_involved': 4,
                   # FIXME: Need time zone
                   'date_reported': printable_datetime(
                 datetime.datetime(2010, 2, 22, 19, 46, 30)),
@@ -445,7 +445,7 @@ class TestTracBugParser(object):
                   'description': "This package hasn't been touched in 4 years which either means it's stable or not being used at all. Let's deprecate it (also see #4111).",
                   'status': 'new',
                   'importance': 'normal',
-                  'people_involved': 5,
+                  'people_involved': 4,
                   # FIXME: Need time zone
                   'date_reported': printable_datetime(
                 datetime.datetime(2010, 2, 22, 19, 46, 30)),
