@@ -260,7 +260,7 @@ class TracBugParser(object):
         key_ths = doc.cssselect('table.properties th')
         for key_th in key_ths:
             key = key_th.text
-            value = key_th.itersiblings().next().text
+            value = key_th.itersiblings().next().text_content()
             if value is not None:
                 ret[key.strip()] = value.strip()
         return ret

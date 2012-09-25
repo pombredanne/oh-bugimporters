@@ -527,3 +527,38 @@ class TestTracBugParser(object):
             datetime.datetime(2010, 6, 19, 8, 15, 37))
         self.assertEqual(wanted_date, got['date_reported'])
         self.assertEqual(wanted_date, got['last_touched'])
+
+    def test_create_bug_with_link_in_reported_by_field(self):
+        tbp = TracBugParser('https://code.djangoproject.com/query?id=18937')
+
+        cached_csv_filename = os.path.join(HERE, 'sample-data', 'django-trac-18937.csv')
+        tbp.set_bug_csv_data(unicode(
+            open(cached_csv_filename).read(), 'utf-8'))
+
+        cached_html_filename = os.path.join(HERE, 'sample-data', 'django-trac-18937.html')
+        tbp.set_bug_html_data(unicode(
+            open(cached_html_filename).read(), 'utf-8'))
+
+        got = tbp.get_parsed_data_dict(self.tm4)
+        del got['last_polled']
+
+        wanted = {
+            '_project_name': 'Tango',
+            'as_appears_in_distribution': '',
+            'canonical_bug_link': 'https://code.djangoproject.com/query?id=18937',
+            'concerns_just_documentation': False,
+            'date_reported': printable_datetime(
+                datetime.datetime(2012, 9, 10, 3, 17, 54)),
+            'description': u'Add a PKG-INFO file as fitting with [http://www.python.org/dev/peps/pep-0345/ PEP 345].\r\rSee [http://blog.ziade.org/2012/09/10/dear-django-help-python-packaging/ this blog post] for reference.\r\rSeems to me we can add this metadata file without too much difficulty and make new packaging happy :D\r\r',
+            'good_for_newcomers': False,
+            'importance': '',
+            'last_touched': printable_datetime(
+                datetime.datetime(2012, 9, 10, 3, 27, 13)),
+            'looks_closed': False,
+            'people_involved': 3,
+            'status': 'new',
+            'submitter_realname': '',
+            'submitter_username': 'mjtamlyn',
+            'title': 'Use modern Python packaging metadata standard (1.2, PEP 345)',
+        }
+        self.assertEqual(wanted, got)
