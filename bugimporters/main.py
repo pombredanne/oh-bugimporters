@@ -146,10 +146,16 @@ class BugImportSpider(scrapy.spider.BaseSpider):
                 yield request
 
     def __init__(self, input_filename=None):
-        if input_filename is not None:
-            with open(input_filename) as f:
-                self.input_data = yaml.load(f)
+        if input_filename is None:
+            return
 
+        with open(input_filename) as f:
+            self.input_data = yaml.load(f)
+
+        # Sometimes, the data we are given is wrapped in {'objects': data}
+        # Detect that, and work around it.
+        if 'objects' in self.input_data:
+            self.input_data = self.input_data['objects']
 
 if __name__ == '__main__':
     main(sys.argv[1:])
