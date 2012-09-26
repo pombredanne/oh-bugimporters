@@ -5,6 +5,7 @@ import yaml
 import mock
 import importlib
 import scrapy.spider
+import logging
 
 def dict2obj(d):
     class Trivial(object):
@@ -60,6 +61,12 @@ def main_worker(data):
             }
 
         raw_bug_importer = obj.bugimporter
+        ### If the bugimporter value is not something we can use, skip it
+        if (('.' in raw_bug_importer) or
+            raw_bug_importer not in bugimporter_aliases):
+            logging.error("Skipping one bug importer data object.")
+            continue
+
         if '.' not in raw_bug_importer:
             raw_bug_importer = bugimporter_aliases[raw_bug_importer]
 
