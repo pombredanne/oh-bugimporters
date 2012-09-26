@@ -35,6 +35,10 @@ def main(raw_arguments):
     with open(args.input) as input_file:
         with open(args.output, 'w') as output_file:
             input_data = yaml.load(input_file)
+            # Sometimes, the data we are given is wrapped in {'objects': data}
+            # Detect that, and work around it.
+            if 'data' in input_data:
+                input_data = input_data['data']
             output = main_worker(input_data)
             yaml.safe_dump(output, output_file)
 
