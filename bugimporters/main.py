@@ -150,6 +150,14 @@ class BugImportSpider(scrapy.spider.BaseSpider):
             for request in bug_importer.process_queries(queries):
                 yield request
 
+            bug_urls = getattr(obj, 'bug_urls', [])
+            if hasattr(bug_importer, 'process_bug_urls'):
+                for request in bug_importer.process_bug_urls(bug_urls):
+                    yield request
+            else:
+                logging.error("FYI, this bug importer does not support "
+                              "process_bug_urls. Fix it.")
+
     def __init__(self, input_filename=None):
         if input_filename is None:
             return
