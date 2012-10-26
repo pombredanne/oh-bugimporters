@@ -70,7 +70,7 @@ class TracBugImporter(BugImporter):
         # Parse the returned timeline RSS feed.
         for entry in feedparser.parse(timeline_rss).entries:
             # Format the data.
-            base_url = self.tm.base_url
+            base_url = self.tm.get_base_url()
             entry_url = entry.link.rsplit("#", 1)[0]
             entry_date = printable_datetime(
                 datetime.datetime(*entry.date_parsed[0:6]))
