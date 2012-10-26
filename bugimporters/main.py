@@ -10,7 +10,12 @@ import logging
 def dict2obj(d):
     class Trivial(object):
         def get_base_url(self):
-            return self.base_url
+            ### HACK: If base_url doesn't end with a slash, let's make it
+            ### end with a slash.
+            ret = self.base_url
+            if not ret.endswith('/'):
+                ret += '/'
+            return ret
     ret = Trivial()
     for thing in d:
         setattr(ret, thing, d[thing])
