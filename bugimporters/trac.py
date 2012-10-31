@@ -20,7 +20,6 @@ import cgi
 import csv
 import datetime
 import feedparser
-import importlib
 import lxml
 import lxml.html
 import twisted.web.error
@@ -31,7 +30,6 @@ import urllib2
 import StringIO
 import scrapy.http
 import scrapy.spider
-import yaml
 
 
 from bugimporters.base import BugImporter, printable_datetime
