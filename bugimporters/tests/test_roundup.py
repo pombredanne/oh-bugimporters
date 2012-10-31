@@ -44,6 +44,32 @@ class TestRoundupBugImporter(object):
         item = self.test_new_mercurial_bug_import()
         assert item['looks_closed'] == True
 
+    def test_process_existing_bug_urls(self):
+        # Reset test state
+        self.setup_class()
+
+        # Remove 'queries', and add a bug to existing_bug_urls
+        self.tm.queries = []
+        self.tm.existing_bug_urls = [
+            'http://mercurial.selenic.com/bts/issue1550',
+            ]
+
+        # Create the bug spider
+        spider = bugimporters.main.BugImportSpider()
+        spider.input_data = [self.tm.__dict__]
+
+        # Configure URL<->filename mapping for offline crawling
+        url2filename = {
+            'http://mercurial.selenic.com/bts/issue1550':
+                os.path.join(HERE, 'sample-data', 'closed-mercurial-bug.html'),
+            }
+
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+        assert len(items) == 1
+        assert items[0]['canonical_bug_link'] == url2filename.keys()[0]
+
     def test_top_to_bottom(self):
         self.setup_class()
         spider = bugimporters.main.BugImportSpider()
