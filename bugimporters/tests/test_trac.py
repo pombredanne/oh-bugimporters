@@ -197,7 +197,7 @@ class TestTracBugImporter(object):
         # (This is a file you can get by calling 'wget' on the above ticket URL.)
         # (You might have to add --no-check-certificate to override the certificate common name error)
         cached_html_filename = os.path.join(HERE, 'sample-data',
-                '92')
+                'ndg-ticket-92')
         tbp.set_bug_html_data(unicode(
             open(cached_html_filename).read(), 'utf-8'))
 
@@ -205,7 +205,7 @@ class TestTracBugImporter(object):
         # https://projects.forum.nokia.com/ndg/ticket/92 and clicking
         # "Comma-delimited text" at the bottom.
         tbp.set_bug_csv_data(open(os.path.join(HERE, 'sample-data',
-                't92.csv')).read())
+                'ndg-ticket-92.csv')).read())
 
         # Provide a fake "tracker model", which is a little bit of data that
         # corresponds to information about the open source project in question
