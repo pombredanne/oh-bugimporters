@@ -22,12 +22,6 @@ def dict2obj(d):
     ret.as_appears_in_distribution = ''# FIXME, hack
     return ret
 
-class FakeReactorManager(object):
-    def __init__(self):
-        self.running_deferreds = 0 # FIXME: Hack
-    def maybe_quit(self, *args, **kwargs): ## FIXME: Hack
-        return
-
 def main(raw_arguments):
     parser = argparse.ArgumentParser(description='Simple oh-bugimporters crawl program')
 
