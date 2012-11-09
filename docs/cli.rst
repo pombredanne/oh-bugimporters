@@ -1,14 +1,13 @@
 Command line interface
 ======================
 
-(Status: Partially implemented)
-
 The oh-bugimporters package has the capability to crawl remote bug
 trackers and store the parsed data in YAML files. To use this
 functionality, you must create a YAML file with information about the
 remote bug trackers you want to crawl.
 
-This document steps you through that.
+This document steps you through that. The command line interface is
+really just a way to call Scrapy.
 
 In order to do a bug crawl, you'll need to follow these steps:
 
@@ -46,11 +45,16 @@ Run the command line interface
 
 Run this command::
 
- ./env/bin/python bugimporters/main.py -i /tmp/configuration.yaml -o /tmp/output.yaml
+ ./env/bin/python bugimporters/main.py -i /tmp/configuration.yaml -o /tmp/output.jsonlines
 
 This will read the configuration YAML file you have named, and go off
-and download bugs. When it exits, /tmp/output.yaml will have the
+and download bugs. When it exits, /tmp/output.jsonlines will have the
 parsed bug data.
+
+Note that the output is always in Scrapy's "jsonlines" format. You can
+`read more about jsonlines here`_.
+
+.. _read more about jsonlines here: http://doc.scrapy.org/en/latest/topics/exporters.html#scrapy.contrib.exporter.JsonLinesItemExporter
 
 Flaws
 -----
