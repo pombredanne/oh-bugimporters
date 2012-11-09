@@ -44,9 +44,10 @@ class GoogleBugImporter(BugImporter):
             yield r
 
     def handle_query_atom_response(self, response):
-        return self.handle_query_atom(response.body)
+        just_these_bug_urls = response.meta.get('bug_list', None)
+        return self.handle_query_atom(response.body, just_these_bug_urls)
 
-    def handle_query_atom(self, query_atom):
+    def handle_query_atom(self, query_atom, just_these_bug_urls=None):
         # Turn the query_atom into an IssuesFeed.
         try:
             query_feed = Parse(query_atom, IssuesFeed)
@@ -55,14 +56,19 @@ class GoogleBugImporter(BugImporter):
             # FIXME: We should log the string that made us crash.
             return
         # If we learned about any bugs, go ask for data about them.
-        return self.prepare_bug_urls(query_feed)
+        return self.prepare_bug_urls(query_feed, just_these_bug_urls)
 
-    def prepare_bug_urls(self, query_feed):
+    def prepare_bug_urls(self, query_feed, just_these_bug_urls):
         # Convert the list of issues into a dict of bug URLs and issues.
         bug_dict = {}
         for issue in query_feed.entry:
             # Get the bug URL.
             bug_url = issue.get_alternate_link().href
+            # If we were told to filter for only certain bug URLs, then
+            # we look at the URL and drop the ones that do not match.
+            if ((just_these_bug_urls is not None) and
+                bug_url not in just_these_bug_urls):
+                continue
             # Add the issue to the bug_url_dict. This has the side-effect of
             # removing duplicate bug URLs, as later ones just overwrite earlier
             # ones.
@@ -73,7 +79,13 @@ class GoogleBugImporter(BugImporter):
         # no harm in updating fresh ones as there is no extra network hit.
         return self.process_bugs(bug_dict.items())
 
-    def process_bugs(self, bug_list):
+    def process_bugs(self, bug_list, older_bug_data_url=None):
+        if older_bug_data_url:
+            iterable = self.process_older_bugs(bug_list, older_bug_data_url)
+            for item in iterable:
+                yield item
+            return
+
         for bug_url, bug_atom in bug_list:
             if bug_atom:
                 # We already have the data from a query.
@@ -84,6 +96,16 @@ class GoogleBugImporter(BugImporter):
                 yield scrapy.http.Request(
                     url=bug_url,
                     callback=self.handle_bug_atom)
+
+    def process_older_bugs(self, bug_list, older_bug_data_url):
+        r = scrapy.http.Request(
+            url=older_bug_data_url,
+            callback=self.handle_query_atom_response)
+        # For historical reasons, bug_list is a tuple of (url, data).
+        # We just want the URLs. self.handle_query_atom() will
+        # know how to properly filter these.
+        r.meta['bug_list'] = [url for (url, data) in bug_list]
+        yield r
 
     def handle_bug_atom_response(self, response):
         # Create a GoogleBugParser instance to store the bug data.
