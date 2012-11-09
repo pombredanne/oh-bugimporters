@@ -2,7 +2,6 @@
 import argparse
 import sys
 import yaml
-import mock
 import importlib
 import scrapy.spider
 import logging
