@@ -19,7 +19,6 @@ def dict2obj(d):
     ret = Trivial()
     for thing in d:
         setattr(ret, thing, d[thing])
-    ret.max_connections = 5 # FIXME, hack
     ret.as_appears_in_distribution = ''# FIXME, hack
     return ret
 
