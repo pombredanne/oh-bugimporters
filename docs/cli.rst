@@ -61,10 +61,4 @@ Flaws
 
 Flaws at the moment:
 
-* Right now, the command line interface assumes that the bug tracker is of type Trac. We should update the input format correspondingly.
-
-* We need to modify the YAML input format to support listing query URLs. Otherwise, you end up with the silly hack stuff that you see in main.py around get_query_url.
-
 * We need to modify the output format to support requesting deletion of data for a bug.
-
-* And yeah, test coverage.
