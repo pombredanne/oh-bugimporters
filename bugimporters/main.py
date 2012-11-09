@@ -142,7 +142,7 @@ class BugImportSpider(scrapy.spider.BaseSpider):
                     yield request
             else:
                 logging.error("FYI, this bug importer does not support "
-                              "process_bug_urls. Fix it.")
+                              "process_bugs(). Fix it.")
 
     def __init__(self, input_filename=None):
         if input_filename is None:
