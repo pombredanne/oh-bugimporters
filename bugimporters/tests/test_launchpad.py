@@ -24,6 +24,7 @@ class TestLaunchpadBugImporter(object):
             )
 
     def test_top_to_bottom(self, extra_url2filename=None):
+        self.setup_class()
         spider = bugimporters.main.BugImportSpider()
         spider.input_data = [self.tm]
         url2filename = {
@@ -69,6 +70,7 @@ class TestLaunchpadBugImporter(object):
         return item
 
     def test_looks_closed_detection(self):
+        self.setup_class()
         extra_url2filename={
             'https://api.launchpad.net/1.0/bzr/?ws.op=searchTasks':
                 os.path.join(HERE, 'sample-data', 'launchpad',
@@ -78,6 +80,7 @@ class TestLaunchpadBugImporter(object):
         assert item['looks_closed']
 
     def test_documentation_detection(self):
+        self.setup_class()
         extra_url2filename={
             'https://api.launchpad.net/1.0/bugs/839461':
                 os.path.join(HERE, 'sample-data', 'launchpad',
@@ -87,6 +90,7 @@ class TestLaunchpadBugImporter(object):
         assert item['concerns_just_documentation']
 
     def test_bitesize_detection(self):
+        self.setup_class()
         extra_url2filename={
             'https://api.launchpad.net/1.0/bugs/839461':
                 os.path.join(HERE, 'sample-data', 'launchpad',
