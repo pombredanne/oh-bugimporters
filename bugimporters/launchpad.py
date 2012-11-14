@@ -60,6 +60,7 @@ class LaunchpadBugImporter(BugImporter):
             r = scrapy.http.Request(
                 url=query,
                 callback=self.handle_bug_list_response)
+            r.headers['Accept'] = 'application/json'
             yield r
 
     def handle_bug_list_response(self, response):
@@ -73,9 +74,11 @@ class LaunchpadBugImporter(BugImporter):
         bug_collection = json.loads(data)
         url = bug_collection.get('next_collection_link')
         if url:  # Get the next page
-            yield scrapy.http.Request(
+            r = scrapy.http.Request(
                 url=url,
                 callback=self.handle_bug_list_response)
+            r.headers['Accept'] = 'application/json'
+            yield r
 
         # The bug data that show up in bug_collection['entries']
         # is equivalent to what we get back if we asked for the
@@ -108,6 +111,7 @@ class LaunchpadBugImporter(BugImporter):
                     url=bug_api_url,
                     callback=self.handle_task_data_response)
                 r.meta['lp_bug'] = lp_bug
+                r.headers['Accept'] = 'application/json'
                 yield r
 
     def handle_task_data_response(self, response):
@@ -138,6 +142,7 @@ class LaunchpadBugImporter(BugImporter):
             url=bug_url,
             callback=self.handle_bug_data_response)
         r.meta['lp_bug'] = lp_bug
+        r.headers['Accept'] = 'application/json'
         return r
 
     def handle_bug_data_response(self, response):
@@ -157,6 +162,7 @@ class LaunchpadBugImporter(BugImporter):
             url=sub_url,
             callback=self.handle_subscriptions_response)
         r.meta['lp_bug'] = lp_bug
+        r.headers['Accept'] = 'application/json'
         return r
 
     def handle_subscriptions_response(self, response):
@@ -175,6 +181,7 @@ class LaunchpadBugImporter(BugImporter):
             url=lp_bug.owner_link,
             callback=self.handle_user_response)
         r.meta['lp_bug'] =  lp_bug
+        r.headers['Accept'] = 'application/json'
         return r
 
     def handle_user_response(self, response):
