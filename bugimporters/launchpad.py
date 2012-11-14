@@ -88,9 +88,9 @@ class LaunchpadBugImporter(BugImporter):
     def _convert_web_to_api(self, url):
         parts = url.split('/')
         project = parts[-3]
-        bug_id = parts[-1]
-        bug_api_url = 'https://api.launchpad.net/1.0/%s/+bug/%s' % (
-            project, bug_id)
+        bug_id = int(parts[-1])
+        bug_api_url = 'https://api.launchpad.net/1.0/%s/+bug/%d/bug_tasks' % (
+            project, bug_id,)
         return bug_api_url
 
     def process_bugs(self, bug_list):
@@ -106,9 +106,12 @@ class LaunchpadBugImporter(BugImporter):
                 bug_api_url = self._convert_web_to_api(bug_url)
                 r = scrapy.http.Request(
                     url=bug_api_url,
-                    callback=self.handle_task_data)
+                    callback=self.handle_task_data_response)
                 r.meta['lp_bug'] = lp_bug
                 yield r
+
+    def handle_task_data_response(self, response):
+        return self.handle_task_data(response.body, response.meta['lp_bug'])
 
     def handle_task_data(self, task_data, lp_bug):
         """

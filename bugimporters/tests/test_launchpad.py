@@ -69,6 +69,46 @@ class TestLaunchpadBugImporter(object):
         self.assertEqual('Vincent Ladeuil', item['submitter_realname'])
         return item
 
+    def test_process_existing_bug_urls(self):
+        # Reset test state
+        self.setup_class()
+
+        # Remove 'queries', and add a bug to existing_bug_urls
+        self.tm['queries'] = []
+        self.tm['existing_bug_urls'] = [
+            'https://bugs.launchpad.net/bzr/+bug/839461',
+            ]
+
+        # Create the bug spider
+        spider = bugimporters.main.BugImportSpider()
+        spider.input_data = [self.tm]
+
+        # Configure URL<->filename mapping for offline crawling
+        url2filename = {
+            'https://api.launchpad.net/1.0/bugs/839461':
+                os.path.join(HERE, 'sample-data', 'launchpad',
+                             'bugs_839461'),
+            'https://api.launchpad.net/1.0/bzr/+bug/839461':
+                os.path.join(HERE, 'sample-data', 'launchpad',
+                             'bugs_839461'),
+            'https://api.launchpad.net/1.0/bzr/+bug/839461/bug_tasks':
+                os.path.join(HERE, 'sample-data', 'launchpad',
+                             'bugs_task_839461'),
+            'https://api.launchpad.net/1.0/bugs/839461/subscriptions':
+                os.path.join(HERE, 'sample-data', 'launchpad',
+                             'bugs_839461_subscriptions'),
+            'https://api.launchpad.net/1.0/~vila':
+                os.path.join(HERE, 'sample-data', 'launchpad',
+                             '~vila'),
+            }
+
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+        assert len(items) == 1
+        assert items[0]['canonical_bug_link'] == self.tm[
+            'existing_bug_urls'][0]
+
     def test_looks_closed_detection(self):
         self.setup_class()
         extra_url2filename={
