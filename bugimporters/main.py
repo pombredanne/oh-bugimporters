@@ -60,6 +60,7 @@ class BugImportSpider(scrapy.spider.BaseSpider):
                 'roundup': 'roundup.RoundupBugImporter',
                 'github': 'github.GitHubBugImporter',
                 'google': 'google.GoogleBugImporter',
+                'launchpad': 'launchpad.LaunchpadBugImporter',
                 }
 
             raw_bug_importer = obj.bugimporter
