@@ -74,6 +74,36 @@ class TestGoogleBugImport(object):
         items = ar.respond_recursively(spider.start_requests())
         assert len(items) == 74
 
+    def test_old_bug_data(self):
+        spider = bugimporters.main.BugImportSpider()
+        spider.input_data = [dict(
+                    tracker_name='SymPy',
+                    google_name='sympy',
+                    bitesized_type='label',
+                    bitesized_text='EasyToFix',
+                    documentation_type='label',
+                    documentation_text='Documentation',
+                    bugimporter = 'google.GoogleBugImporter',
+                    queries=[],
+                    get_older_bug_data=('https://code.google.com/feeds/issues/p/sympy/issues/full' +
+                                        '?max-results=10000&can=all&updated-min=2012-09-15T00:00:00'),
+                    existing_bug_urls=[
+                    'http://code.google.com/p/sympy/issues/detail?id=2371',
+                    ],
+                    )]
+        url2filename = {
+            ('https://code.google.com/feeds/issues/p/sympy/issues/full' +
+             '?max-results=10000&can=all&updated-min=2012-09-15T00:00:00'):
+                os.path.join(HERE, 'sample-data', 'google',
+                             'issues-by-date.atom'),
+            }
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+        assert len(items) == 1
+        item = items[0]
+        assert item['canonical_bug_link'] == 'http://code.google.com/p/sympy/issues/detail?id=2371'
+
     def test_create_google_data_dict_with_everything(self):
         atom_dict = {
                 'id': {'text': 'http://code.google.com/feeds/issues/p/sympy/issues/full/1215'},
