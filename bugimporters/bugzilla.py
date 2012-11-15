@@ -40,8 +40,7 @@ from bugimporters.helpers import cached_property, string2naive_datetime
 ### This list of bug IDs comes from a few places.
 #
 ### First, and very easily, it comes from the list of bugs we are told
-### we already have crawled. That's trivial and synchronous. (NOTE: Right now,
-### that isn't even implemented!)
+### we already have crawled.
 #
 ### Second, and more complicated: we execute a number of queries against
 ### the remote bug tracker to get a list of bug IDs we *should* care about.
