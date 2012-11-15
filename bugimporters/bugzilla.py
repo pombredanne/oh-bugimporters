@@ -2,6 +2,7 @@
 # Copyright (C) 2010, 2011 Jack Grigg
 # Copyright (C) 2010 OpenHatch, Inc.
 # Copyright (C) 2012 Berry Phillips.
+# Copyright (C) 2012 Asheesh Laroia.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
