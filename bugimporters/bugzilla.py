@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
 import lxml
-import twisted.web.error
-import twisted.web.http
 import urlparse
 import logging
 import scrapy
