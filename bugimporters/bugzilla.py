@@ -218,13 +218,13 @@ class BugzillaBugImporter(BugImporter):
 
             data.update({
                 'canonical_bug_link': bbp.bug_url,
-                'tracker': self.tm,
+                '_tracker_name': self.tm.tracker_name,
                 '_project_name': bbp.generate_bug_project_name(
                         bug_project_name_format=self.tm.bug_project_name_format,
                         tracker_name=self.tm.tracker_name),
             })
 
-            self.data_transits['bug']['update'](data)
+            yield data
 
 
     def determine_if_finished(self):
