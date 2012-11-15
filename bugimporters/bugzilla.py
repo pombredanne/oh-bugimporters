@@ -255,8 +255,8 @@ class BugzillaBugParser:
         return len(set(everyone))
 
     @staticmethod
-    def bugzilla_date_to_datetime(date_string):
-        return string2naive_datetime(date_string)
+    def bugzilla_date_to_printable_datetime(date_string):
+        return string2naive_datetime(date_string).isoformat()
 
     def get_parsed_data_dict(self,
                              base_url, bitesized_type, bitesized_text,
@@ -281,8 +281,10 @@ class BugzillaBugParser:
             'status': status,
             'importance': self.get_tag_text_from_xml(xml_data, 'bug_severity'),
             'people_involved': self.bugzilla_count_people_involved(xml_data),
-            'date_reported': self.bugzilla_date_to_datetime(date_reported_text),
-            'last_touched': self.bugzilla_date_to_datetime(last_touched_text),
+            'date_reported': self.bugzilla_date_to_printable_datetime(
+                    date_reported_text),
+            'last_touched': self.bugzilla_date_to_printable_datetime(
+                    last_touched_text),
             'submitter_username': u,
             'submitter_realname': r,
             'canonical_bug_link': self.bug_url,
