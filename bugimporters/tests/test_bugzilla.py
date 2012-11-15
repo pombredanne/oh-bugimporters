@@ -125,6 +125,30 @@ class TestBugzillaBugImporter(object):
                 'http://bugzilla.pculture.org/show_bug.cgi?id=9466',
                 ])
 
+    def test_provide_existing_bug_urls(self):
+        spider = bugimporters.main.BugImportSpider()
+        spider.input_data = [dict(self.tm)]
+        # Add some existing bug URLs to the story
+        spider.input_data[0]['existing_bug_urls'] = [
+                'http://bugzilla.pculture.org/show_bug.cgi?id=9415',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=9569',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=15672',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=11882',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=2374',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=4763',
+                ]
+        spider.input_data[0]['queries'] = []
+        url2filename = {
+            'http://bugzilla.pculture.org/show_bug.cgi?ctype=xml&excludefield=attachmentdata&id=2374&id=4763&id=9415&id=9569&id=11882&id=15672&':
+                sample_data_path('fewer-pculture-bugs.xml'),
+            }
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+        assert len(items) == 6
+        assert set([item['canonical_bug_link'] for item in items]) == set(
+            spider.input_data[0]['existing_bug_urls'])
+
     def test_miro_bug_object(self):
         # Check the number of Bugs present.
         # Parse XML document as if we got it from the web

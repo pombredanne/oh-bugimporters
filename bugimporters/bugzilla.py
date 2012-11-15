@@ -124,6 +124,17 @@ class BugzillaBugImporter(BugImporter):
         # Add them to self.bug_ids.
         self.bug_ids.extend([int(depend.text) for depend in depends])
 
+    def process_bugs(self, bug_list):
+        bug_urls = [bug_url for (bug_url, _) in bug_list]
+        bug_ids = []
+        for bug_url in bug_urls:
+            _, after = bug_url.split('?', 1)
+            as_dict = urlparse.parse_qs(after)
+            bug_ids.extend(as_dict['id'])
+
+        for request in self.generate_requests_for_bugs(map(int, bug_ids)):
+            yield request
+
     def generate_requests_for_bugs(self, bug_ids, AT_A_TIME=50):
         '''Note that this method is not implemented in a thread-safe
         way. It exploits the fact that we are only doing asynchronous
