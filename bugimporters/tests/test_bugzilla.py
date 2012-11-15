@@ -127,3 +127,16 @@ Keywords: Torrent unittest""")
         self.assertEqual(bug['canonical_bug_link'],
                          'http://bugzilla.pculture.org/show_bug.cgi?id=2294')
         self.assert_(not bug['looks_closed'])
+
+    def test_miro_bugzilla_detects_closedness(self):
+        # Parse XML document as if we got it from the web
+        with open(sample_data_path('miro-2294-2009-08-06.xml')) as f:
+            bug_xml = f.read()
+            modified_bug_xml = bug_xml.replace('NEW', 'CLOSED')
+            all_bugs = list(self.bug_importer.handle_bug_xml(modified_bug_xml))
+
+        self.assertEqual(len(all_bugs), 1)
+        bug = all_bugs[0]
+        self.assertEqual(bug['canonical_bug_link'],
+                         'http://bugzilla.pculture.org/show_bug.cgi?id=2294')
+        self.assert_(bug['looks_closed'])
