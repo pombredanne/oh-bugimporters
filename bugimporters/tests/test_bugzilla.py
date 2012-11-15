@@ -117,3 +117,13 @@ Keywords: Torrent unittest""")
         self.assertEqual(bug['submitter_realname'], 'Nick Nassar')
         self.assertEqual(bug['canonical_bug_link'], 'http://bugzilla.pculture.org/show_bug.cgi?id=2294')
         self.assert_(bug['good_for_newcomers'])
+
+    def test_full_grab_miro_bugs(self):
+        with open(sample_data_path('miro-2294-2009-08-06.xml')) as f:
+            all_bugs = list(self.bug_importer.handle_bug_xml(f.read()))
+
+        self.assertEqual(len(all_bugs), 1)
+        bug = all_bugs[0]
+        self.assertEqual(bug['canonical_bug_link'],
+                         'http://bugzilla.pculture.org/show_bug.cgi?id=2294')
+        self.assert_(not bug['looks_closed'])
