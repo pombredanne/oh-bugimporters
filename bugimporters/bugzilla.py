@@ -22,11 +22,39 @@ import twisted.web.error
 import twisted.web.http
 import urlparse
 import logging
+import scrapy
 
 import bugimporters.items
 from bugimporters.base import BugImporter
 from bugimporters.helpers import cached_property, string2naive_datetime
 
+### The design of the BugzillaBugImporter has always been very special.
+#
+### We get bug data by executing a show_bug.cgi?ctype=xml query against the
+### bug tracker in question.
+#
+### We populate that query with a list of bug IDs that we care about. In
+### general, we want to issue fairly few show_bug?ctype=xml queries, just
+### to be nice to the remote bug tracker.
+#
+### This list of bug IDs comes from a few places.
+#
+### First, and very easily, it comes from the list of bugs we are told
+### we already have crawled. That's trivial and synchronous. (NOTE: Right now,
+### that isn't even implemented!)
+#
+### Second, and more complicated: we execute a number of queries against
+### the remote bug tracker to get a list of bug IDs we *should* care about.
+### This includes queries about bitesize bugs in the remote bug tracker.
+### The current implementation takes the approach that, after we finish
+### extracting the list of bug IDs we care about, it calls a method to
+### enqueue a request (if required) to make sure those bug IDs are fetched.
+###
+### To avoid duplicates, that method stores some state in the
+### BugzillaBugImporter instance to indicate it has queued up a request for
+### data on those bugs. That way, if the method is called repeatedly with
+### bug IDs which we are in the middle of downloading, we carefully refuse to
+### re-download them and waste time on the poor remote bug tracker.
 
 class BugzillaBugImporter(BugImporter):
     def __init__(self, *args, **kwargs):
@@ -36,28 +64,34 @@ class BugzillaBugImporter(BugImporter):
         if self.bug_parser is None:
             self.bug_parser = BugzillaBugParser
 
-        # Create a list to store bug ids obtained from queries.
-        self.bug_ids = []
+        # Create a set of bug IDs whose data we have already enqueued
+        # a request for.
+        self.already_enqueued_bug_ids = set()
 
     def process_queries(self, queries):
-        # Add all the queries to the waiting list.
         for query_url in queries:
-            # Get the query type and set the callback.
-            query_type = query.query_type
-            if query_type == 'xml':
-                callback = self.handle_query_html
-            else:
-                callback = self.handle_tracking_bug_xml
-            # Add the query URL and callback.
-            self.add_url_to_waiting_list(
-                    url=query_url,
-                    callback=callback)
-            # Update query.last_polled and save it.
-            query.last_polled = datetime.datetime.utcnow()
-            query.save()
+            # Add the query URL and generic callback.
+            # Note that we don't know what exact type of query this is:
+            # a tracking bug, or just something that returns Bugzilla XML.
+            # We get to disambiguate in the callback.
+            yield scrapy.http.Request(url=query_url,
+                    callback=self.handle_query_response)
 
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+    def handle_query_response(self, response):
+        # Find out what type of query this is.
+
+        # Is it XML?
+        first_100_bytes =  response.body[:100]
+        if first_100_bytes.strip().startswith("<?xml"):
+            bug_ids = self.handle_tracking_bug_xml(response.body)
+
+        # Else, assume it's some kind of HTML.
+        bug_ids = self.handle_query_html(response.body)
+
+        # Either way, enqueue the work of downloading information about those
+        # bugs.
+        for request in self.generate_requests_for_bugs(bug_ids):
+            yield request
 
     def handle_query_html(self, query_html_string):
         # Turn the string into an HTML tree that can be parsed to find the list
@@ -80,7 +114,7 @@ class BugzillaBugImporter(BugImporter):
             # Convert this to a list of bug ids.
             bug_id_list = [int(i.get('value')) for i in bug_id_inputs]
             # Add them to self.bug_ids.
-            self.bug_ids.extend(bug_id_list)
+            return bug_id_list
 
     def handle_tracking_bug_xml(self, tracking_bug_xml_string):
         # Turn the string into an XML tree.
@@ -90,106 +124,42 @@ class BugzillaBugImporter(BugImporter):
         # Add them to self.bug_ids.
         self.bug_ids.extend([int(depend.text) for depend in depends])
 
-    def prepare_bug_urls(self):
-        # Pull bug_ids our of the internal storage. This is done in case the
-        # list is simultaneously being written to, in which case just copying
-        # the entire thing followed by deleting the contents could lead to
-        # lost IDs.
-        bug_id_list = []
-        while self.bug_ids:
-            bug_id_list.append(self.bug_ids.pop())
+    def generate_requests_for_bugs(self, bug_ids, AT_A_TIME=50):
+        '''Note that this method is not implemented in a thread-safe
+        way. It exploits the fact that we are only doing asynchronous
+        I/O, not threaded processing.'''
+        bug_ids_to_request = sorted(set([
+                    bug_id
+                    for bug_id in bug_ids
+                    if bug_id not in self.already_enqueued_bug_ids]))
 
-        # Convert the obtained bug ids to URLs.
-        bug_url_list = [urlparse.urljoin(self.tm.get_base_url(),
-                                "show_bug.cgi?id=%d" % bug_id) for bug_id in bug_id_list]
-
-        # Get the sub-list of URLs that are fresh.
-        fresh_bug_urls = self.data_transits['bug']['get_fresh_urls'](bug_url_list)
-
-        # Remove the fresh URLs to be let with stale or new URLs.
-        for bug_url in fresh_bug_urls:
-            bug_url_list.remove(bug_url)
-
-        # Put the bug list in the form required for process_bugs.
-        # The second entry of the tuple is None as Bugzilla doesn't supply data
-        # in the queries above (although it does support grabbing data for
-        # multiple bugs at once, when all the bug ids are known.
-        bug_list = [(bug_url, None) for bug_url in bug_url_list]
-
-        # And now go on to process the bug list
-        self.process_bugs(bug_list)
-
-    def process_bugs(self, bug_list):
-        # If there are no bug URLs, finish now.
-        if not bug_list:
-            self.determine_if_finished()
-            return
-
-        # Convert the bug URLs into bug ids.
-        bug_id_list = []
-        for bug_url, _ in bug_list:
-            base, num = bug_url.rsplit('=', 1)
-            bug_id = int(num)
-            bug_id_list.append(bug_id)
-
-        # Create a single URL to fetch all the bug data.
-        big_url = urlparse.urljoin(
+        first_n, rest = (bug_ids_to_request[:AT_A_TIME],
+                         bug_ids_to_request[AT_A_TIME:])
+        while first_n:
+            # Create a single URL to fetch all the bug data.
+            big_url = urlparse.urljoin(
                 self.tm.get_base_url(),
                 'show_bug.cgi?ctype=xml&excludefield=attachmentdata')
-        for bug_id in bug_id_list:
-            big_url += '&id=%d' % bug_id
+            big_url += '&'
+            for bug_id in first_n:
+                big_url += "id=%d&" % (bug_id,)
 
-        # Fetch the bug data.
-        self.add_url_to_waiting_list(
-                url=big_url,
-                callback=self.handle_bug_xml,
-                c_args={},
-                errback=self.errback_bug_xml,
-                e_args={'bug_id_list': bug_id_list})
+            # Create the corresponding request object
+            r = scrapy.http.Request(url=big_url,
+                                    callback=self.handle_bug_xml_response)
 
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+            # Update the 'rest' of the work
+            first_n, rest = (rest[:AT_A_TIME],
+                             rest[AT_A_TIME:])
 
-    def errback_bug_xml(self, failure, bug_id_list):
-        logging.info("STARTING ERRBACK")
-        # Check if the failure was related to the size of the request.
-        size_related_errors = [
-                twisted.web.http.REQUEST_ENTITY_TOO_LARGE,
-                twisted.web.http.REQUEST_TIMEOUT,
-                twisted.web.http.REQUEST_URI_TOO_LONG
-                ]
-        if failure.check(twisted.web.error.Error) and failure.value.status in size_related_errors:
-            big_url_base = urlparse.urljoin(
-                    self.tm.get_base_url(),
-                    'show_bug.cgi?ctype=xml&excludefield=attachmentdata')
-            # Split bug_id_list into pieces, and turn each piece into a URL.
-            # Note that (floor division)+1 is used to ensure that for
-            # odd-numbered lists we don't end up with one bug id left over.
-            num_ids = len(bug_id_list)
-            step = (num_ids // 2) + 1
-            for i in xrange(0, num_ids, step):
-                bug_id_list_fragment = bug_id_list[i:i + step]
-                # Check the fragment actually has bug ids in it.
-                if not bug_id_list_fragment:
-                    # This is our recursive end-point.
-                    continue
+            # Signal that we have these bug IDs taken care of.
+            self.already_enqueued_bug_ids.update(set(first_n))
 
-                # Create the URL for the fragment of bug ids.
-                big_url = big_url_base
-                for bug_id in bug_id_list_fragment:
-                    big_url += '&id=%d' % bug_id
+            # yield the Request so it actually gets handled
+            yield r
 
-                # Fetch the reduced bug data.
-                self.add_url_to_waiting_list(
-                        url=big_url,
-                        callback=self.handle_bug_xml,
-                        c_args={},
-                        errback=self.errback_bug_xml,
-                        e_args={'bug_id_list': bug_id_list_fragment})
-
-        else:
-            # Pass the Failure on.
-            return failure
+    def handle_bug_xml_response(self, response):
+        return self.handle_bug_xml(response.body)
 
     def handle_bug_xml(self, bug_list_xml_string):
         logging.info("STARTING XML")
@@ -225,15 +195,6 @@ class BugzillaBugImporter(BugImporter):
             })
 
             yield data
-
-
-    def determine_if_finished(self):
-        # If we got here then there are no more URLs in the waiting list.
-        # So if self.bug_ids is also empty then we are done.
-        if self.bug_ids:
-            self.prepare_bug_urls()
-        else:
-            self.finish_import()
 
 class BugzillaBugParser:
     @staticmethod

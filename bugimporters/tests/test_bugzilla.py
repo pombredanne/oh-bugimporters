@@ -10,7 +10,7 @@ import autoresponse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 def sample_data_path(f):
-    return os.path.join(HERE, 'sample-data', f)
+    return os.path.join(HERE, 'sample-data', 'bugzilla', f)
 
 class TestCustomBugParser(object):
     @staticmethod
@@ -47,7 +47,6 @@ class TestCustomBugParser(object):
                                              documentation_text='')
             assert mock_specific.called
     ### Now, test that the bug import spider will create an importer
-
     ### configured to use the right class.
     def test_customs_twist_creates_importers_correctly(self):
         tm = dict(
@@ -85,6 +84,9 @@ class TestBugzillaBugImporter(object):
                 documentation_type='key',
                 documentation_text='',
                 bugimporter='bugzilla',
+                queries=[
+                'http://bugzilla.pculture.org/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&field-1-0-0=bug_status&field-1-1-0=product&field-1-2-0=keywords&keywords=bitesized&product=Miro&query_format=advanced&remaction=&type-1-0-0=anyexact&type-1-1-0=anyexact&type-1-2-0=anywords&value-1-0-0=NEW%2CASSIGNED%2CREOPENED&value-1-1-0=Miro&value-1-2-0=bitesized',
+                ],
                 )
         spider = bugimporters.main.BugImportSpider()
         spider.input_data = [cls.tm]
@@ -92,6 +94,36 @@ class TestBugzillaBugImporter(object):
         assert len(bug_importer_and_objs) == 1
         obj, bug_importer = bug_importer_and_objs[0]
         cls.bug_importer = bug_importer
+
+    def test_top_to_bottom(self):
+        spider = bugimporters.main.BugImportSpider()
+        spider.input_data = [self.tm]
+        url2filename = {
+            self.tm['queries'][0]:
+                sample_data_path('pculture-bitesized-query.html'),
+            'http://bugzilla.pculture.org/show_bug.cgi?ctype=xml&excludefield=attachmentdata&id=2138&id=2283&id=2374&id=4763&id=8462&id=8489&id=8670&id=9339&id=9415&id=9466&id=9569&id=11882&id=13122&id=15672&':
+                sample_data_path('lots-of-pculture-bugs.xml'),
+            }
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+        assert len(items) == 14
+        assert set([item['canonical_bug_link'] for item in items]) == set([
+                'http://bugzilla.pculture.org/show_bug.cgi?id=2283',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=2138',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=13122',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=9415',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=9569',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=15672',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=11882',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=2374',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=4763',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=9339',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=8670',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=8462',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=8489',
+                'http://bugzilla.pculture.org/show_bug.cgi?id=9466',
+                ])
 
     def test_miro_bug_object(self):
         # Check the number of Bugs present.
