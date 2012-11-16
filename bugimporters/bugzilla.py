@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import lxml
+import lxml.etree
 import urlparse
 import logging
 import scrapy
