@@ -2,6 +2,7 @@
 import argparse
 import sys
 import yaml
+import itertools
 import importlib
 import scrapy.spider
 import logging
@@ -52,6 +53,35 @@ def grab_bugimporter_attribute_via_string(s):
     found_class = getattr(bug_import_module, class_name)
     return found_class
 
+def sliding_window_roundrobin(iterables):
+    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+    # Recipe credited to George Sakkis at
+    # http://docs.python.org/2/library/itertools.html#itertools.chain
+    # but then modified.
+    SLICE_SIZE = 20
+    current_iterables = itertools.islice(iterables, 0, SLICE_SIZE)
+    pending = len(list(itertools.islice(iterables, 0, SLICE_SIZE)))
+    rest = itertools.islice(iterables, SLICE_SIZE, None)
+    nexts = itertools.cycle(iter(it).next for it in current_iterables)
+    while pending:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            pending -= 1
+            nexts_before_cycle = []
+            for i in range(pending):
+                nexts_before_cycle.append(nexts.next())
+            try:
+                one_more = rest.next()
+            except StopIteration:
+                pass
+            else:
+                nexts_before_cycle.append(iter(one_more).next)
+                pending += 1
+
+            nexts = itertools.cycle(nexts_before_cycle)
+
 class BugImportSpider(scrapy.spider.BaseSpider):
     name = "Spider for importing using oh-bugimporters"
 
@@ -95,28 +125,38 @@ class BugImportSpider(scrapy.spider.BaseSpider):
                 data_transits=None)
             yield (obj, bug_importer)
 
+    def requests_for_bugimporter(self, obj, bug_importer):
+        for request in bug_importer.process_queries(obj.queries):
+            yield request
+
+        older_bug_data_url = getattr(
+            obj, 'get_older_bug_data', '')
+        if older_bug_data_url:
+            kwargs = {'older_bug_data_url': older_bug_data_url}
+        else:
+            kwargs = {}
+
+        bug_urls = getattr(obj, 'existing_bug_urls', [])
+        if hasattr(bug_importer, 'process_bugs'):
+            if bug_urls:
+                for request in bug_importer.process_bugs(
+                    [(url, None) for url in bug_urls],
+                    **kwargs):
+                    yield request
+        else:
+            logging.error("FYI, this bug importer does not support "
+                          "process_bugs(). Fix it.")
+
+
     def start_requests(self):
-        for (obj, bug_importer) in self.get_bugimporters():
-            for request in bug_importer.process_queries(obj.queries):
-                yield request
+        iterable_of_iterables = (
+            self.requests_for_bugimporter(obj, bug_importer)
+            for (obj, bug_importer) in self.get_bugimporters())
 
-            older_bug_data_url = getattr(
-                obj, 'get_older_bug_data', '')
-            if older_bug_data_url:
-                kwargs = {'older_bug_data_url': older_bug_data_url}
-            else:
-                kwargs = {}
-
-            bug_urls = getattr(obj, 'existing_bug_urls', [])
-            if hasattr(bug_importer, 'process_bugs'):
-                if bug_urls:
-                    for request in bug_importer.process_bugs(
-                        [(url, None) for url in bug_urls],
-                        **kwargs):
-                        yield request
-            else:
-                logging.error("FYI, this bug importer does not support "
-                              "process_bugs(). Fix it.")
+        # The following function call lets us blend the different
+        # bugimporters.
+        for request in sliding_window_roundrobin(iterable_of_iterables):
+            yield request
 
     def __init__(self, input_filename=None):
         if input_filename is None:
