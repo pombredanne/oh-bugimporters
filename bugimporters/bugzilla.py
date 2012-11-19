@@ -120,7 +120,7 @@ class BugzillaBugImporter(BugImporter):
         # Find all the bugs that this tracking bug depends on.
         depends = tracking_bug_xml.findall('bug/dependson')
         # Add them to self.bug_ids.
-        self.bug_ids.extend([int(depend.text) for depend in depends])
+        return [int(depend.text) for depend in depends]
 
     def process_bugs(self, bug_list):
         bug_urls = [bug_url for (bug_url, _) in bug_list]

@@ -149,6 +149,22 @@ class TestBugzillaBugImporter(object):
         assert set([item['canonical_bug_link'] for item in items]) == set(
             spider.input_data[0]['existing_bug_urls'])
 
+    def test_tracking_bug_xml(self):
+        with open(sample_data_path('fedora-tracking-bug.xml')) as f:
+            all_bugs = list(self.bug_importer.handle_tracking_bug_xml(f.read()))
+
+        assert set(all_bugs) == set([
+                469416, 499203, 509837, 510021, 510026, 510029,
+                510030, 510043, 510051, 510057, 510059, 510062,
+                510065, 510072, 510074, 510080, 510082, 510084,
+                510085, 510089, 510090, 510095, 510109, 510123,
+                510125, 510145, 510730, 511270, 511282, 512962,
+                512968, 512984, 512988, 515302, 515303, 515306,
+                515311, 516739, 516756, 516776, 516783, 516801,
+                516807, 516808, 516986, 517006, 517007, 517528,
+                518007, 518012, 518020, 518026, 518030, 518031,
+                518045, 518065, 518070, 518304, 525810, 591370])
+
     def test_miro_bug_object(self):
         # Check the number of Bugs present.
         # Parse XML document as if we got it from the web
