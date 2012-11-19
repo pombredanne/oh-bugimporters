@@ -96,13 +96,22 @@ class BugzillaBugImporter(BugImporter):
         # Turn the string into an HTML tree that can be parsed to find the list
         # of bugs hidden in the 'XML' form.
         query_html = lxml.etree.HTML(query_html_string)
-        # Find all form inputs at the level we want.
-        # This amounts to around three forms.
-        query_form_inputs = query_html.xpath('/html/body/div/table/tr/td/form/input')
-        # Extract from this the inputs corresponding to 'ctype' fields.
-        ctype_inputs = [i for i in query_form_inputs if 'ctype' in i.values()]
-        # Limit this to inputs with 'ctype=xml'.
-        ctype_xml = [i for i in ctype_inputs if 'xml' in i.values()]
+        # Find just the hidden form input element that looks like:
+        # <input type="hidden" name="ctype" value="xml"> that is inside
+        # a form that submits to show_bug.cgi.
+        ctype_xml = query_html.xpath(
+            '//form[@action="show_bug.cgi"]/input[@value="xml"]')
+        # In the web UI, if we clicked that, we'd get an XML dump of the same
+        # query we're seeing in HTML. Rather than clicking it, we look at the
+        # bug ID list that would be passed to show_bug.cgi.
+        #
+        # All we're interested in is that list of bug IDs, after all. We will
+        # do our own set of XML queries for their data.
+        #
+        # As a random aside: this form submits via POST by default, and now
+        # I understand why: there are often so many bug ID values requested
+        # that one would end up with a request URI that is too long, if we
+        # requested all those bugs over GET.
         if ctype_xml:
             # Get the 'XML' form.
             xml_form = ctype_xml[0].getparent()
