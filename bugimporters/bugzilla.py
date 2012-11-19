@@ -83,8 +83,9 @@ class BugzillaBugImporter(BugImporter):
         if first_100_bytes.strip().startswith("<?xml"):
             bug_ids = self.handle_tracking_bug_xml(response.body)
 
-        # Else, assume it's some kind of HTML.
-        bug_ids = self.handle_query_html(response.body)
+        else:
+            # Else, assume it's some kind of HTML.
+            bug_ids = self.handle_query_html(response.body)
 
         # Either way, enqueue the work of downloading information about those
         # bugs.
