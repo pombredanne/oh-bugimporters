@@ -74,6 +74,75 @@ class TestGoogleBugImport(object):
         items = ar.respond_recursively(spider.start_requests())
         assert len(items) == 74
 
+    def test_top_to_bottom_with_bigger_project(self):
+        # For this project, we found that some bugs from the past were not
+        # getting refreshed.
+        #
+        # This is because of a subtlety of import from the Google Code bug
+        # tracker.
+        #
+        # The get_older_bug_data query gives us all updates to bugs that have
+        # taken place since that date. So if one of the bugs in
+        # existing_bug_urls has been updated, we get notified of those updates.
+        #
+        # But if one of those bugs has *not* been updated, then Google Code
+        # tells us nothing. The old behavior was that we would, therefore,
+        # leave no information about that bug in the output of the crawl.
+        # Therefore, consumers of the data would conclude that the bug has
+        # not been polled. But actually, we *do* have some information we
+        # can report. Namely, since there was no update to the bug since
+        # its last_polled, it has stayed the same until now.
+        #
+        # Therefore, this test verifies that we report on existing_bug_urls
+        # to indicate there is no change.
+        spider = bugimporters.main.BugImportSpider()
+        spider.input_data = [
+            {'bitesized_text': u'Effort-Minimal,Effort-Easy,Effort-Fair',
+             'bitesized_type': u'label',
+             'bugimporter': 'google',
+             'custom_parser': u'',
+             'documentation_text': u'Component-Docs',
+             'documentation_type': u'label',
+             'existing_bug_urls': [
+                    # No data in the feed
+                    u'http://code.google.com/p/soc/issues/detail?id=1461',
+                    # Has data in the feed
+                    u'http://code.google.com/p/soc/issues/detail?id=1618',
+                    ],
+             'get_older_bug_data':
+                 u'https://code.google.com/feeds/issues/p/soc/issues/full?max-results=10000&can=all&updated-min=2012-05-22T19%3A52%3A10',
+             'google_name': u'soc',
+             'queries': [],
+             'tracker_name': u'Melange'},
+            ]
+
+        url2filename = {
+            'https://code.google.com/feeds/issues/p/soc/issues/full?max-results=10000&can=all&updated-min=2012-05-22T19%3A52%3A10':
+                os.path.join(HERE, 'sample-data', 'google', 'soc-date-query.atom'),
+            }
+        ar = autoresponse.Autoresponder(url2filename=url2filename,
+                                        url2errors={})
+        items = ar.respond_recursively(spider.start_requests())
+
+        # Make sure bugs that actually have data come back, clear and true
+        bug_with_data = [
+            x for x in items
+            if (x['canonical_bug_link'] ==
+                'http://code.google.com/p/soc/issues/detail?id=1618')][0]
+        assert bug_with_data['title']
+        assert not bug_with_data.get('_no_update', False)
+
+        # Verify (here's the new bit) that we report on bugs that are not
+        # represented in the feed.
+        bug_without_data = [
+            x for x in items
+            if (x['canonical_bug_link'] ==
+                'http://code.google.com/p/soc/issues/detail?id=1461')][0]
+        assert bug_without_data['_no_update']
+
+        assert ('http://code.google.com/p/soc/issues/detail?id=1461' in [
+            x['canonical_bug_link'] for x in items])
+
     def test_old_bug_data(self):
         spider = bugimporters.main.BugImportSpider()
         spider.input_data = [dict(

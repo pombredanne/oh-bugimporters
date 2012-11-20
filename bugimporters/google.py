@@ -77,7 +77,22 @@ class GoogleBugImporter(BugImporter):
         # And now go on to process the bug list.
         # We just use all the bugs, as they all have complete data so there is
         # no harm in updating fresh ones as there is no extra network hit.
-        return self.process_bugs(bug_dict.items())
+        for parsed_bug in self.process_bugs(bug_dict.items()):
+            yield parsed_bug
+
+        # Now... if we were given a list of just_these_bug_urls, and one of them
+        # didn't report an update to us, let's indicate we want process_bugs()
+        # to generate a no-op report.
+        if just_these_bug_urls:
+            for should_hear_about in just_these_bug_urls:
+                if should_hear_about in bug_dict:
+                    pass # great, we already reported about it.
+                else:
+                    b = bugimporters.items.ParsedBug({
+                            'canonical_bug_link': should_hear_about,
+                            '_no_update': True,
+                            })
+                    yield b
 
     def process_bugs(self, bug_list, older_bug_data_url=None):
         if older_bug_data_url:
