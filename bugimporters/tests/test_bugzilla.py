@@ -136,6 +136,15 @@ class TestBugzillaBugImporter(object):
                 308345, 308913, 309050, 309428, 309724, 309739,
                 309819, 310051, 310052, 310053, 310181, 310182])
 
+    def test_with_bug_xml_containig_errors(self):
+        with open(sample_data_path("some-bugs-with-errors.xml")
+                  ) as kde_bug_xml_data:
+            bug_data = list(
+                self.bug_importer.handle_bug_xml(kde_bug_xml_data.read()))
+
+        # Even though we queried for two bugs, one is filtered out.
+        assert len(bug_data) == 1
+
     def test_top_to_bottom(self):
         spider = bugimporters.main.BugImportSpider()
         spider.input_data = [self.tm]

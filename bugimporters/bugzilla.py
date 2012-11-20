@@ -195,6 +195,13 @@ class BugzillaBugImporter(BugImporter):
 
     def handle_bug_list_xml_parsed(self, bug_list_xml):
         for bug_xml in bug_list_xml.xpath('bug'):
+            error = bug_xml.attrib.get('error', None)
+            if error:
+                logging.error("Uh, there was one bug (%s) with an error: %s",
+                              bug_xml.xpath('bug_id')[0].text,
+                              error)
+                continue # Skip this bug, since we have an error and no data.
+
             # Create a BugzillaBugParser with the XML data.
             bbp = self.bug_parser(bug_xml)
 
