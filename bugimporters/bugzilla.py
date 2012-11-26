@@ -385,8 +385,13 @@ class MozillaBugParser(BugzillaBugParser):
                              }
         if self.product == 'Other Applications':
             bug_project_name = 'Mozilla ' + self.component
-        else:
+        elif self.product in mozilla2openhatch:
             bug_project_name = mozilla2openhatch[self.product]
+        else:
+            bug_project_name = self.product
+            if 'mozilla' not in bug_project_name.lower():
+                bug_project_name = 'Mozilla ' + bug_project_name
+
         return bug_project_name
 
 class MediaWikiBugParser(BugzillaBugParser):
