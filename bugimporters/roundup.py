@@ -18,7 +18,7 @@
 
 import datetime
 import logging
-import lxml
+import lxml.html
 import re
 import urlparse
 import scrapy.http
