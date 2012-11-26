@@ -34,6 +34,8 @@ def main(raw_arguments):
                        'bugimporters/main.py',
                        '-a', 'input_filename=%s' % (args.input,),
                        '-s', 'TELNETCONSOLE_ENABLED=0',
+                       '-s', 'BOT_NAME=oh-bugimporters',
+                       '-s', 'USER_AGENT=oh-bugimporters',
                        '-s', 'WEBSERVICE_ENABLED=0',
                        '-s', 'FEED_FORMAT=jsonlines',
                        '-s', 'FEED_URI=%s' % (args.output,),
