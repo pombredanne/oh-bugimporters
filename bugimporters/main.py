@@ -82,10 +82,19 @@ class BugImportSpider(scrapy.spider.BaseSpider):
                 raw_bug_importer)
 
             # The configuration may ask us to use a specific bug parser
-            special_bug_parser_name = getattr(obj, 'custom_parser', None)
+            special_bug_parser_name = getattr(obj, 'custom_parser', '')
             if special_bug_parser_name:
-                bug_parser_class = grab_bugimporter_attribute_via_string(
-                    special_bug_parser_name)
+                try:
+                    bug_parser_class = grab_bugimporter_attribute_via_string(
+                        special_bug_parser_name)
+                except Exception, e:
+                    # Log the error...
+                    logging.error("FYI, this is not a valid custom parser: %s",
+                                  special_bug_parser_name)
+                    logging.exception(e)
+                    # And keep looping, skipping this misconfigured bug importer
+                    continue
+
             else:
                 bug_parser_class = None
                 # By passing None here, we ask the
