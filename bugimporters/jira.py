@@ -47,6 +47,7 @@ class JiraBugImporter(BugImporter):
     def handle_old_bug_query(self, response):
         bugs_we_care_about = response.meta['bug_list']
         bugs_from_response = json.loads(response.body)
+        assert bugs_from_response == 1
         for bug in bugs_from_response:
             if bug['self'] in bugs_we_care_about:
                 yield self.handle_bug(bug)
@@ -64,14 +65,16 @@ class JiraBugParser(object):
         self.tm = tm
 
     def parse(self, issue):
+        print "Tracker: ", self.tm
         parsed = bugimporters.items.ParsedBug({
             'title': issue['fields']['summary'],
             'description': issue['fields']['description'],
-            'status': issue['fields']['status']['name'],
+            'status': issue['fields']['status']['name'].lower(),
             'date_reported': printable_datetime(string2naive_datetime(issue['fields']['created'])),
             'last_touched': printable_datetime(string2naive_datetime(issue['fields']['updated'])),
             'submitter_username': issue['fields']['reporter']['name'],
             'submitter_realname': issue['fields']['reporter']['displayName'],
+            'canonical_bug_link': self.tm.get_base_url() + issue['key'],
             'looks_closed': (issue['fields']['status']['name'] == 'Closed'),
             'last_polled': printable_datetime(),
             '_project_name': self.tm.tracker_name,
