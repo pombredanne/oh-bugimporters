@@ -19,7 +19,7 @@ class TestJiraBugImporter(object):
         self.tm = TrackerModel()
         self.im = JiraBugImporter(self.tm)
 
-    def test_top_to_bottom_closed(self):
+    def test_top_to_bottom_open(self):
         spider = bugimporters.main.BugImportSpider()
         self.tm.bugimporter = 'jira.JiraBugImporter'
         self.tm.tracker_name = 'openhatch tests'
