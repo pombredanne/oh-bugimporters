@@ -113,7 +113,7 @@ class TestJiraBugImporter(object):
         spider.input_data = [self.tm.__dict__]
 
         url2filename = {
-                'http://jira.cyanogenmod.org/rest/api/2/search?jql=created>2011-12-08':
+                'http://jira.cyanogenmod.org/rest/api/2/search?jql=created%3E2011-12-08':
                     os.path.join(HERE, 'sample-data', 'jira',
                         'issue-list-with-date-constraint')
                     }
