@@ -20,6 +20,7 @@ import scrapy.spider
 import bugimporters.items
 from bugimporters.base import BugImporter, printable_datetime
 from bugimporters.helpers import string2naive_datetime
+from urlparse import urljoin
 
 class JiraBugImporter(BugImporter):
     def process_queries(self, queries):
@@ -73,7 +74,7 @@ class JiraBugParser(object):
             'last_touched': printable_datetime(string2naive_datetime(issue['fields']['updated'])),
             'submitter_username': issue['fields']['reporter']['name'],
             'submitter_realname': issue['fields']['reporter']['displayName'],
-            'canonical_bug_link': self.tm.get_base_url() + issue['key'],
+            'canonical_bug_link': urljoin(self.tm.get_base_url(), '/browse/' + issue['key']),
             'looks_closed': (issue['fields']['status']['name'] == 'Closed'),
             'last_polled': printable_datetime(),
             '_project_name': self.tm.tracker_name,
