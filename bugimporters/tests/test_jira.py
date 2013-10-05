@@ -24,6 +24,7 @@ class TestJiraBugImporter(object):
         self.tm.bugimporter = 'jira.JiraBugImporter'
         self.tm.tracker_name = 'openhatch tests'
         self.tm.base_url = 'http://jira.cyanogenmod.org/browse/'
+        self.tm.bitesized_type = 'label'
         self.tm.bitesized_tag = 'bitesize'
         self.tm.documentation_tag = 'docs'
         self.tm.queries = [
@@ -64,7 +65,8 @@ class TestJiraBugImporter(object):
         self.tm.bugimporter = 'jira.JiraBugImporter'
         self.tm.tracker_name = 'openhatch tests'
         self.tm.base_url = 'http://jira.cyanogenmod.org/browse/'
-        self.tm.bitesized_tag = 'bitesize'
+        self.tm.bitesized_type = 'priority'
+        self.tm.bitesized_tag = 'Trivial'
         self.tm.documentation_tag = 'docs'
         self.tm.queries = [
             'https://jira.cyanogenmod.org/rest/api/2/search?jql=status=closed'
@@ -94,8 +96,8 @@ class TestJiraBugImporter(object):
         self.assertEqual(bug['submitter_realname'], 'Administrator')
         self.assertEqual(bug['canonical_bug_link'],
                 'http://jira.cyanogenmod.org/browse/MKY-1')
-        self.assertEqual(bug['good_for_newcomers'], False)
-        self.assertEqual(bug['concerns_just_documentation'], False)
+        self.assertEqual(bug['good_for_newcomers'], True)
+        self.assertEqual(bug['concerns_just_documentation'], True)
         self.assertEqual(bug['looks_closed'], True)
 
 
