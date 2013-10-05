@@ -46,8 +46,7 @@ class JiraBugImporter(BugImporter):
 
     def handle_old_bug_query(self, response):
         bugs_we_care_about = response.meta['bug_list']
-        bugs_from_response = json.loads(response.body)
-        assert bugs_from_response == 1
+        bugs_from_response = json.loads(response.body)["issues"]
         for bug in bugs_from_response:
             if bug['self'] in bugs_we_care_about:
                 yield self.handle_bug(bug)
