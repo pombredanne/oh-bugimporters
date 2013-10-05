@@ -84,9 +84,14 @@ class JiraBugParser(object):
         issue_labels = set([
             l for l in issue['fields']['labels']
         ])
-
-        b_list = self.tm.bitesized_tag.split(',')
-        parsed['good_for_newcomers'] = not issue_labels.isdisjoint(b_list)
+        if self.tm.bitesized_type:
+            if self.tm.bitesized_type == 'label':
+                b_list = self.tm.bitesized_tag.split(',')
+                parsed['good_for_newcomers'] = not issue_labels.isdisjoint(b_list)
+            elif self.tm.bitesized_type == 'priority':
+                parsed['good_for_newcomers'] = issue['fields']['priority']['name'] == self.tm.bitesized_tag
+            else:
+                parsed['good_for_newcomers'] = False
 
         d_list = self.tm.documentation_tag.split(',')
         parsed['concerns_just_documentation'] = not issue_labels.isdisjoint(d_list)
