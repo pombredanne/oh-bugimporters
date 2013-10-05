@@ -22,7 +22,7 @@
 "name": "Closed",
 "id": "1"
 },
-"labels": [ ],
+"labels": ["docs"],
 "votes": {
 "self": "http://localhost:8090/jira/rest/api/2/issue/MKY-1/votes",
 "votes": 0,
@@ -72,7 +72,7 @@
 "priority": {
 "self": "http://localhost:8090/jira/rest/api/2/priority/3",
 "iconUrl": "http://localhost:8090/jira/images/icons/priority_major.gif",
-"name": "Major",
+"name": "Trivial",
 "id": "3"
 },
 "description": "A description",
