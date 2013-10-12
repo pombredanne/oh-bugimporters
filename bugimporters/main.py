@@ -70,6 +70,7 @@ class BugImportSpider(scrapy.spider.BaseSpider):
                 'roundup': 'roundup.RoundupBugImporter',
                 'github': 'github.GitHubBugImporter',
                 'google': 'google.GoogleBugImporter',
+                'jira': 'jira.JiraBugImporter',
                 'launchpad': 'launchpad.LaunchpadBugImporter',
                 'bugzilla': 'bugzilla.BugzillaBugImporter',
                 }
