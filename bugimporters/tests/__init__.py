@@ -16,9 +16,19 @@ class TrackerModel(Mock):
     bitesized_text = 'easy'
     documentation_type = 'keywords'
     documentation_text = 'documentation'
+    as_appears_in_distribution = ''
+    old_trac = False
 
     def get_base_url(self):
         return self.base_url
+
+class HaskellTrackerModel(TrackerModel):
+    """This is a Mock for the Haskell(GHC) tracker. Since it uses Trac we
+    just need to extend TrackerModel and overwrite it's specific bitesized
+    indentifiers"""
+
+    bitesized_type = 'difficulty'
+    bitesized_text = 'Easy (less than 1 hour)'
 
 
 class Bug(object):
@@ -45,4 +55,12 @@ class FakeGetPage(object):
                 404, 'File Not Found', None)))
         return d
 
-
+class ObjectFromDict(object):
+    def __init__(self, data, recursive = False):
+        for key in data:
+            if recursive:
+                if type(data[key]) == type({}):
+                    data[key] = ObjectFromDict(data[key], recursive=recursive)
+                elif type(data[key]) == type([]):
+                    data[key] = [ObjectFromDict(item, recursive=recursive) for item in data[key]]
+            setattr(self, key, data[key])

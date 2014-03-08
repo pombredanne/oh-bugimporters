@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import datetime
+import scrapy.http
 
 from atom.core import Parse
 from gdata.projecthosting.data import IssuesFeed, IssueEntry
@@ -37,19 +37,17 @@ class GoogleBugImporter(BugImporter):
 
     def process_queries(self, queries):
         # Add all the queries to the waiting list
-
         for query in queries:
-            query_url = query.get_query_url()
-            self.add_url_to_waiting_list(
-                    url=query_url,
-                    callback=self.handle_query_atom)
-            query.last_polled = datetime.datetime.utcnow()
-            query.save()
+            r = scrapy.http.Request(
+                url=query,
+                callback=self.handle_query_atom_response)
+            yield r
 
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+    def handle_query_atom_response(self, response):
+        just_these_bug_urls = response.meta.get('bug_list', None)
+        return self.handle_query_atom(response.body, just_these_bug_urls)
 
-    def handle_query_atom(self, query_atom):
+    def handle_query_atom(self, query_atom, just_these_bug_urls=None):
         # Turn the query_atom into an IssuesFeed.
         try:
             query_feed = Parse(query_atom, IssuesFeed)
@@ -57,28 +55,20 @@ class GoogleBugImporter(BugImporter):
             logging.warn("For what it is worth, query_atom caused us to crash.")
             # FIXME: We should log the string that made us crash.
             return
-        # If we got data, we store it.
-        self.query_feeds.append(query_feed)
+        # If we learned about any bugs, go ask for data about them.
+        return self.prepare_bug_urls(query_feed, just_these_bug_urls)
 
-    def prepare_bug_urls(self):
-        # Pull query_feeds our of the internal storage. This is done in case the
-        # list is simultaneously being written to, in which case just copying
-        # the entire thing followed by deleting the contents could lead to
-        # lost feeds.
-        query_feed_list = []
-        while self.query_feeds:
-            query_feed_list.append(self.query_feeds.pop())
-
-        # Convert query_feed_list into a list of issues.
-        issue_list = []
-        for feed in query_feed_list:
-            issue_list.extend(feed.entry)
-
+    def prepare_bug_urls(self, query_feed, just_these_bug_urls):
         # Convert the list of issues into a dict of bug URLs and issues.
         bug_dict = {}
-        for issue in issue_list:
+        for issue in query_feed.entry:
             # Get the bug URL.
             bug_url = issue.get_alternate_link().href
+            # If we were told to filter for only certain bug URLs, then
+            # we look at the URL and drop the ones that do not match.
+            if ((just_these_bug_urls is not None) and
+                bug_url not in just_these_bug_urls):
+                continue
             # Add the issue to the bug_url_dict. This has the side-effect of
             # removing duplicate bug URLs, as later ones just overwrite earlier
             # ones.
@@ -87,30 +77,55 @@ class GoogleBugImporter(BugImporter):
         # And now go on to process the bug list.
         # We just use all the bugs, as they all have complete data so there is
         # no harm in updating fresh ones as there is no extra network hit.
-        self.process_bugs(bug_dict.items())
+        for parsed_bug in self.process_bugs(bug_dict.items()):
+            yield parsed_bug
 
-    def process_bugs(self, bug_list):
-        # If there are no bug URLs, finish now.
-        if not bug_list:
-            self.determine_if_finished()
+        # Now... if we were given a list of just_these_bug_urls, and one of them
+        # didn't report an update to us, let's indicate we want process_bugs()
+        # to generate a no-op report.
+        if just_these_bug_urls:
+            for should_hear_about in just_these_bug_urls:
+                if should_hear_about in bug_dict:
+                    pass # great, we already reported about it.
+                else:
+                    b = bugimporters.items.ParsedBug({
+                            'canonical_bug_link': should_hear_about,
+                            '_no_update': True,
+                            })
+                    yield b
+
+    def process_bugs(self, bug_list, older_bug_data_url=None):
+        if older_bug_data_url:
+            iterable = self.process_older_bugs(bug_list, older_bug_data_url)
+            for item in iterable:
+                yield item
             return
 
         for bug_url, bug_atom in bug_list:
-            # Create a GoogleBugParser instance to store the bug data.
-            gbp = GoogleBugParser(bug_url)
-
             if bug_atom:
                 # We already have the data from a query.
-                self.handle_bug_atom(bug_atom, gbp)
+                yield self.handle_bug_atom(
+                    bug_atom, GoogleBugParser(bug_url))
             else:
                 # Fetch the bug data.
-                self.add_url_to_waiting_list(
-                        url=gbp.bug_atom_url,
-                        callback=self.handle_bug_atom,
-                        c_args={'gbp': gbp})
+                yield scrapy.http.Request(
+                    url=bug_url,
+                    callback=self.handle_bug_atom)
 
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+    def process_older_bugs(self, bug_list, older_bug_data_url):
+        r = scrapy.http.Request(
+            url=older_bug_data_url,
+            callback=self.handle_query_atom_response)
+        # For historical reasons, bug_list is a tuple of (url, data).
+        # We just want the URLs. self.handle_query_atom() will
+        # know how to properly filter these.
+        r.meta['bug_list'] = [url for (url, data) in bug_list]
+        yield r
+
+    def handle_bug_atom_response(self, response):
+        # Create a GoogleBugParser instance to store the bug data.
+        gbp = GoogleBugParser(response.request.url)
+        return self.handle_bug_atom(response.body, gbp)
 
     def handle_bug_atom(self, bug_atom, gbp):
         # Pass the GoogleBugParser the Atom data
@@ -120,18 +135,10 @@ class GoogleBugImporter(BugImporter):
         data = gbp.get_parsed_data_dict(self.tm)
         data.update({
             'canonical_bug_link': gbp.bug_url,
-            'tracker': self.tm
+            '_tracker_name': self.tm.tracker_name,
         })
 
-        self.data_transits['bug']['update'](data)
-
-    def determine_if_finished(self):
-        # If we got here then there are no more URLs in the waiting list.
-        # So if self.bug_ids is also empty then we are done.
-        if self.query_feeds:
-            self.prepare_bug_urls()
-        else:
-            self.finish_import()
+        return bugimporters.items.ParsedBug(data)
 
 
 class GoogleBugParser(object):
@@ -215,8 +222,8 @@ class GoogleBugParser(object):
                 'status': status,
                 'importance': self.google_find_label_type(issue.label, 'Priority'),
                 'people_involved': self.google_count_people_involved(issue),
-                'date_reported': self.google_date_to_datetime(issue.published.text),
-                'last_touched': self.google_date_to_datetime(issue.updated.text),
+                'date_reported': self.google_date_to_datetime(issue.published.text).isoformat(),
+                'last_touched': self.google_date_to_datetime(issue.updated.text).isoformat(),
                 'submitter_username': author.name.text,
                 'submitter_realname': '', # Can't get this from Google
                 'canonical_bug_link': self.bug_url,

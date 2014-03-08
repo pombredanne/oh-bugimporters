@@ -12,15 +12,28 @@ setup_params = dict(
     install_requires=[
         'gdata',
         'lxml',
+        'cssselect',
         'pyopenssl',
         'unicodecsv',
         'feedparser',
         'twisted',
         'python-dateutil',
         'decorator',
-        'scrapy',
+        'scrapy>0.9',
+        'argparse',
+        'mock',
+        'PyYAML',
+        'autoresponse>=0.3.1',
     ],
 )
+
+### Python 2.7 already has importlib. Because of that,
+### we can't put it in install_requires. We test for
+### that here; if needed, we add it.
+try:
+    import importlib
+except ImportError:
+    setup_params['install_requires'].append('importlib')
 
 
 if __name__ == '__main__':

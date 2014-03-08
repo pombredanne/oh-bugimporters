@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE bugzilla SYSTEM "https://bugzilla.redhat.com/bugzilla.dtd">
+
+<bugzilla version="4.2.4-6"
+          urlbase="https://bugzilla.redhat.com/"
+          
+          maintainer="bugzilla-owner@redhat.com"
+>
+
+    <bug>
+          <bug_id>509829</bug_id>
+          <alias>fitandfinish</alias>
+          <creation_ts>2009-07-06 09:39:00 -0400</creation_ts>
+          <short_desc>Tracker bug for &apos;Fit and Finish&apos; issues</short_desc>
+          <delta_ts>2011-01-25 15:54:29 -0500</delta_ts>
+          <reporter_accessible>1</reporter_accessible>
+          <cclist_accessible>1</cclist_accessible>
+          <classification_id>2</classification_id>
+          <classification>Fedora</classification>
+          <product>Fedora</product>
+          <component>distribution</component>
+          <version>rawhide</version>
+          <rep_platform>All</rep_platform>
+          <op_sys>Linux</op_sys>
+          <bug_status>CLOSED</bug_status>
+          <resolution>RAWHIDE</resolution>
+          
+          
+          <bug_file_loc></bug_file_loc>
+          <status_whiteboard></status_whiteboard>
+          <keywords>Tracking</keywords>
+          <priority>low</priority>
+          <bug_severity>medium</bug_severity>
+          <target_milestone>---</target_milestone>
+          <dependson>469416</dependson>
+    
+    <dependson>499203</dependson>
+    
+    <dependson>509837</dependson>
+    
+    <dependson>510021</dependson>
+    
+    <dependson>510026</dependson>
+    
+    <dependson>510029</dependson>
+    
+    <dependson>510030</dependson>
+    
+    <dependson>510043</dependson>
+    
+    <dependson>510051</dependson>
+    
+    <dependson>510057</dependson>
+    
+    <dependson>510059</dependson>
+    
+    <dependson>510062</dependson>
+    
+    <dependson>510065</dependson>
+    
+    <dependson>510072</dependson>
+    
+    <dependson>510074</dependson>
+    
+    <dependson>510080</dependson>
+    
+    <dependson>510082</dependson>
+    
+    <dependson>510084</dependson>
+    
+    <dependson>510085</dependson>
+    
+    <dependson>510089</dependson>
+    
+    <dependson>510090</dependson>
+    
+    <dependson>510095</dependson>
+    
+    <dependson>510109</dependson>
+    
+    <dependson>510123</dependson>
+    
+    <dependson>510125</dependson>
+    
+    <dependson>510145</dependson>
+    
+    <dependson>510730</dependson>
+    
+    <dependson>511270</dependson>
+    
+    <dependson>511282</dependson>
+    
+    <dependson>512962</dependson>
+    
+    <dependson>512968</dependson>
+    
+    <dependson>512984</dependson>
+    
+    <dependson>512988</dependson>
+    
+    <dependson>515302</dependson>
+    
+    <dependson>515303</dependson>
+    
+    <dependson>515306</dependson>
+    
+    <dependson>515311</dependson>
+    
+    <dependson>516739</dependson>
+    
+    <dependson>516756</dependson>
+    
+    <dependson>516776</dependson>
+    
+    <dependson>516783</dependson>
+    
+    <dependson>516801</dependson>
+    
+    <dependson>516807</dependson>
+    
+    <dependson>516808</dependson>
+    
+    <dependson>516986</dependson>
+    
+    <dependson>517006</dependson>
+    
+    <dependson>517007</dependson>
+    
+    <dependson>517528</dependson>
+    
+    <dependson>518007</dependson>
+    
+    <dependson>518012</dependson>
+    
+    <dependson>518020</dependson>
+    
+    <dependson>518026</dependson>
+    
+    <dependson>518030</dependson>
+    
+    <dependson>518031</dependson>
+    
+    <dependson>518045</dependson>
+    
+    <dependson>518065</dependson>
+    
+    <dependson>518070</dependson>
+    
+    <dependson>518304</dependson>
+    
+    <dependson>525810</dependson>
+    
+    <dependson>591370</dependson>
+          
+          <everconfirmed>1</everconfirmed>
+          <reporter name="Matthias Clasen">mclasen</reporter>
+          <assigned_to name="Matthias Clasen">mclasen</assigned_to>
+          <cc>jkeating</cc>
+          <qa_contact name="Bill Nottingham">notting</qa_contact>
+          <cf_fixed_in></cf_fixed_in>
+          <cf_doc_type>Bug Fix</cf_doc_type>
+          <cf_release_notes></cf_release_notes>
+          <cf_story_points>---</cf_story_points>
+          <cf_clone_of></cf_clone_of>
+          <cf_environment></cf_environment>
+          <cf_last_closed>2011-01-25 15:54:29</cf_last_closed>
+          
+          
+          <cf_type>---</cf_type>
+          <cf_regression_status>---</cf_regression_status>
+          <cf_mount_type>---</cf_mount_type>
+          <cf_documentation_action>---</cf_documentation_action>
+          <cf_crm></cf_crm>
+          <cf_verified_branch></cf_verified_branch>
+          
+          
+          
+          
+          
+
+      
+
+      
+
+      
+
+          <long_desc isprivate="0">
+            <commentid>2254740</commentid>
+            <who name="Matthias Clasen">mclasen</who>
+            <bug_when>2009-07-06 09:39:42 -0400</bug_when>
+            <thetext>See http://www.fedoraproject.org/wiki/Fit_and_Finish.
+
+This bug is meant as a tracker bug for issues that are found during &apos;Fit and Finish&apos; test days. 
+
+The issues that we are targeting with &apos;Fit and Finish&apos; are the small (and large) roadblocks that get in your way when doing everyday tasks with your system.</thetext>
+          </long_desc>
+          <long_desc isprivate="0">
+            <commentid>2469751</commentid>
+            <who name="Bug Zapper">triage</who>
+            <bug_when>2009-11-16 05:39:04 -0500</bug_when>
+            <thetext>
+This bug appears to have been reported against &apos;rawhide&apos; during the Fedora 12 development cycle.
+Changing version to &apos;12&apos;.
+
+More information and reason for this action is here:
+http://fedoraproject.org/wiki/BugZappers/HouseKeeping</thetext>
+          </long_desc>
+          <long_desc isprivate="0">
+            <commentid>2528031</commentid>
+            <who name="Peter Robinson">pbrobinson</who>
+            <bug_when>2009-12-10 12:13:58 -0500</bug_when>
+            <thetext>Updating to rawhide and adding tracking so component doesn&apos;t change</thetext>
+          </long_desc>
+          <long_desc isprivate="0">
+            <commentid>3500193</commentid>
+            <who name="Matthias Clasen">mclasen</who>
+            <bug_when>2011-01-25 15:54:29 -0500</bug_when>
+            <thetext>Nnot useful to carry this bug forward through the ages...</thetext>
+          </long_desc>
+      
+      
+
+    </bug>
+
+</bugzilla>

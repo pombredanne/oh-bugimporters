@@ -26,13 +26,17 @@ import twisted.web.error
 import twisted.web.http
 import urlparse
 import logging
+import urllib2
 import StringIO
+import scrapy.http
+import scrapy.spider
 
 
-from bugimporters.base import BugImporter
+from bugimporters.base import BugImporter, printable_datetime
 from bugimporters.helpers import (string2naive_datetime, cached_property,
         unicodify_strings_when_inputted, wrap_file_object_in_utf8_check)
 import bugimporters.items
+import bugimporters.main
 
 class TracBugImporter(BugImporter):
     def __init__(self, *args, **kwargs):
@@ -43,23 +47,15 @@ class TracBugImporter(BugImporter):
 
     def process_queries(self, queries):
         # If this is an old Trac version, update the timeline.
-        if self.tm.old_trac:
-            pass
-            ### FIXME: Ensure old_trac handling is covered in the
-            ### test suite.
+        ### FIXME: Ensure old_trac handling is covered in the
+        ### test suite.
 
         # Add all the queries to the waiting list
         for query in queries:
-            query_url = query.get_query_url()
-            print query_url
-            self.add_url_to_waiting_list(
-                    url=query_url,
-                    callback=self.handle_query_csv)
-            query.last_polled = datetime.datetime.utcnow()
-            query.save()
-
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+            print query
+            yield scrapy.http.Request(
+                url=query,
+                callback=self.handle_query_csv_response)
 
     def handle_timeline_rss(self, timeline_rss):
         # There are two steps to updating the timeline.
@@ -69,16 +65,20 @@ class TracBugImporter(BugImporter):
         # Parse the returned timeline RSS feed.
         for entry in feedparser.parse(timeline_rss).entries:
             # Format the data.
-            base_url = self.tm.base_url
+            base_url = self.tm.get_base_url()
             entry_url = entry.link.rsplit("#", 1)[0]
-            entry_date = datetime.datetime(*entry.date_parsed[0:6])
+            entry_date = printable_datetime(
+                datetime.datetime(*entry.date_parsed[0:6]))
             entry_status = entry.title.split("): ", 1)[0].rsplit(" ", 1)[1]
 
-            timeline_url = self.data_transits['trac']['get_timeline_url'](
-                **locals())
+            timeline_url = self.data_transits['trac']['get_timeline_url']({
+                    'base_url': base_url,
+                    'entry_url': entry_url,
+                    'entry_date': entry_date,
+                    'entry_status': entry_status})
 
             # Add the URL to the waiting list
-            self.add_url_to_waiting_list(
+            yield scrapy.http.Request(
                 url=timeline_url,
                 callback=self.handle_timeline_rss)
 
@@ -95,10 +95,11 @@ class TracBugImporter(BugImporter):
             # This will reduce network load by not grabbing the RSS feed of bugs
             # whose last_touched info is definitely correct.
             if 'closed' not in tb_times.latest_timeline_status:
-                self.add_url_to_waiting_list(
+                r = scrapy.http.Request(
                         url=tb_times.canonical_bug_link + '?format=rss',
-                        callback=self.handle_bug_rss,
-                        callback_args=tb_times)
+                        callback=self.handle_bug_rss)
+                r.meta['cb_args'] = tb_times
+                yield r
 
         # URLs are now all prepped, so start pushing them onto the reactor.
         self.push_urls_onto_reactor()
@@ -111,6 +112,9 @@ class TracBugImporter(BugImporter):
         if comment_dates:
             tb_times.last_polled = max(comment_dates)
             tb_times.save()
+
+    def handle_query_csv_response(self, response):
+        return self.handle_query_csv(response.body)
 
     def handle_query_csv(self, query_csv):
         # Remove any Unicode oddities before we process query_csv
@@ -133,67 +137,50 @@ class TracBugImporter(BugImporter):
             else:
                 logging.warning("Curious: We ran into a really odd line in Roundup.")
                 logging.warning("%s", line)
-        self.bug_ids.extend(bug_ids)
 
-    def prepare_bug_urls(self):
-        # Pull bug_ids our of the internal storage. This is done in case the
-        # list is simultaneously being written to, in which case just copying
-        # the entire thing followed by ddeleting the contents could lead to
-        # lost IDs.
-        bug_id_list = []
-        while self.bug_ids:
-            bug_id_list.append(self.bug_ids.pop())
+        # Now we pass a sequence of (bug URL, optional extra data) tuples to
+        # self.process_bugs.
+        return self.process_bugs([
+                (self.bug_id2url(bug_id), None)
+                for bug_id in bug_ids])
 
-        # Convert the obtained bug ids to URLs.
-        bug_url_list = [urlparse.urljoin(self.tm.get_base_url(),
-                                "ticket/%d" % bug_id) for bug_id in bug_id_list]
-
-        # Get the sub-list of URLs that are fresh.
-        fresh_bug_urls = self.data_transits['bug']['get_fresh_urls'](bug_url_list)
-
-        # Remove the fresh URLs to be let with stale or new URLs.
-        for bug_url in fresh_bug_urls:
-            bug_url_list.remove(bug_url)
-
-        # Put the bug list in the form required for process_bugs.
-        # The second entry of the tuple is None as Trac never supplies
-        # data via queries.
-        bug_list = [(bug_url, None) for bug_url in bug_url_list]
-
-        # And now go on to process the bug list
-        self.process_bugs(bug_list)
+    def bug_id2url(self, bug_id):
+        url = urlparse.urljoin(self.tm.get_base_url(),
+                               "ticket/%d" % bug_id)
+        return url
 
     def process_bugs(self, bug_list):
         # If there are no bug URLs, finish now.
         if not bug_list:
-            self.determine_if_finished()
             return
 
         for bug_url, _ in bug_list:
             # Create a TracBugParser instance to store the bug data
             tbp = TracBugParser(bug_url)
 
-            self.add_url_to_waiting_list(
-                    url=tbp.bug_csv_url,
-                    callback=self.handle_bug_csv,
-                    c_args={'tbp': tbp},
-                    errback=self.errback_bug_data,
-                    e_args={'tbp': tbp})
+            r = scrapy.http.Request(
+                url=tbp.bug_csv_url,
+                callback=self.handle_bug_csv_response,
+                errback=lambda failure, tbp=tbp: self.errback_bug_data(failure, tbp))
+            r.meta['tbp'] = tbp
+            yield r
 
-        # URLs are now all prepped, so start pushing them onto the reactor.
-        self.push_urls_onto_reactor()
+    def handle_bug_csv_response(self, response):
+        tbp = response.request.meta['tbp']
+        bug_csv = response.body_as_unicode().encode('utf-8')
+        return self.handle_bug_csv(bug_csv, tbp)
 
     def handle_bug_csv(self, bug_csv, tbp):
         # Pass the TracBugParser the CSV data
         tbp.set_bug_csv_data(bug_csv)
 
         # Now fetch the bug HTML
-        self.add_url_to_waiting_list(
-                url=tbp.bug_html_url,
-                callback=self.handle_bug_html,
-                c_args={'tbp': tbp},
-                errback=self.errback_bug_data,
-                e_args={'tbp': tbp})
+        r = scrapy.http.Request(
+            url=tbp.bug_html_url,
+            callback=self.handle_bug_html_response,
+            errback=lambda failure, tbp=tbp: self.errback_bug_data(failure, tbp))
+        r.meta['tbp'] = tbp
+        yield r
 
     def errback_bug_data(self, failure, tbp):
         # For some unknown reason, some trackers choose to delete some bugs
@@ -203,16 +190,17 @@ class TracBugImporter(BugImporter):
         # the bug if it occurs.
         if failure.check(twisted.web.error.Error) and failure.value.status == \
                 twisted.web.http.NOT_FOUND:
-            self.data_transits['bug']['delete_by_url'](tbp.bug_url)
-            # To keep the callback chain happy, explicity return None.
-            return None
-        elif failure.check(twisted.web.client.PartialDownloadError):
-            # Log and squelch
-            logging.warn(failure)
-            return tbp
+            return bugimporters.items.ParsedBug(
+                canonical_bug_link=tbp.bug_url,
+                _deleted=True)
         else:
             # Pass the Failure on.
             return failure
+
+    def handle_bug_html_response(self, response):
+        bug_html = response.body_as_unicode().encode('utf-8')
+        tbp = response.request.meta['tbp']
+        return self.handle_bug_html(bug_html, tbp)
 
     def handle_bug_html(self, bug_html, tbp):
         # Pass the TracBugParser the HTML data
@@ -220,33 +208,13 @@ class TracBugImporter(BugImporter):
 
         # Get the parsed data dict from the TracBugParser
         data = tbp.get_parsed_data_dict(self.tm)
-        data['tracker'] = self.tm
+        data['_tracker_name'] = self.tm.tracker_name
 
-        if self.tm.old_trac:
-
-            # It's an old version of Trac that doesn't have links from the
-            # bugs to the timeline. So we need to fetch these times from
-            # the database built earlier.
-            date_reported, last_touched = self.data_transits[
-                    'trac']['get_bug_times'](tbp.bug_url)
-            data.update({
-                'date_reported': date_reported,
-                'last_touched': last_touched,
-                })
-
-        self.data_transits['bug']['update'](data)
+        return bugimporters.items.ParsedBug(data)
 
     def generate_bug_project_name(self, tbp):
         return self.tm.bug_project_name_format.format(
                 tracker_name=self.tm.tracker_name, component=tbp.component)
-
-    def determine_if_finished(self):
-        # If we got here then there are no more URLs in the waiting list.
-        # So if self.bug_ids is also empty then we are done.
-        if self.bug_ids:
-            self.prepare_bug_urls()
-        else:
-            self.finish_import()
 
 
 class TracBugParser(object):
@@ -256,7 +224,7 @@ class TracBugParser(object):
         key_ths = doc.cssselect('table.properties th')
         for key_th in key_ths:
             key = key_th.text
-            value = key_th.itersiblings().next().text
+            value = key_th.itersiblings().next().text_content()
             if value is not None:
                 ret[key.strip()] = value.strip()
         return ret
@@ -272,10 +240,15 @@ class TracBugParser(object):
 
     @staticmethod
     def page2date_opened(doc):
-        span = doc.cssselect(
+        span_or_a = doc.cssselect(
             '''.date p:contains("Opened") span,
-            .date p:contains("Opened") a''')[0]
-        return TracBugParser._span2date(span)
+            .date p:contains("Opened") a,
+            a.timeline''') # in some cases, the div with date class is missing, so check for .timeline
+        if span_or_a:
+            tag = span_or_a[0]
+        else:
+            tag = doc.cssselect('''.date p:contains("Opened")''')[0]
+        return TracBugParser._span2date(tag)
 
     @staticmethod
     def page2date_modified(doc):
@@ -292,7 +265,7 @@ class TracBugParser(object):
         date_string = span.attrib['title']
         date_string = date_string.replace('in Timeline', '')
         date_string = date_string.replace('See timeline at ', '')
-        return string2naive_datetime(date_string)
+        return printable_datetime(string2naive_datetime(date_string))
 
     @staticmethod
     def all_people_in_changes(doc):
@@ -356,7 +329,7 @@ class TracBugParser(object):
                'submitter_username': self.bug_csv['reporter'],
                'submitter_realname': '',  # can't find this in Trac
                'canonical_bug_link': self.bug_url,
-               'last_polled': datetime.datetime.utcnow(),
+               'last_polled': printable_datetime(),
                '_project_name': tm.tracker_name,
                })
         ret['importance'] = self.bug_csv.get('priority', '')
@@ -376,12 +349,12 @@ class TracBugParser(object):
 
         all_people = set(TracBugParser.all_people_in_changes(self.bug_html))
         all_people.add(page_metadata['Reported by:'])
-        all_people.update(
-            map(lambda x: x.strip(),
-                page_metadata.get('Cc', '').split(',')))
-        all_people.update(
-            map(lambda x: x.strip(),
-                page_metadata.get('Cc:', '').split(',')))
+        if 'Cc' in page_metadata:
+            all_people.update(
+                map(lambda x: x.strip(), page_metadata['Cc'].split(',')))
+        if 'Cc:' in page_metadata:
+            all_people.update(
+                map(lambda x: x.strip(), page_metadata['Cc:'].split(',')))
         try:
             assignee = page_metadata['Assigned to:']
         except KeyError:
@@ -395,10 +368,9 @@ class TracBugParser(object):
         ret['people_involved'] = len(all_people)
 
         # FIXME: Need time zone
-        if not tm.old_trac:
-            # All is fine, proceed as normal.
-            ret['date_reported'] = TracBugParser.page2date_opened(self.bug_html)
-            ret['last_touched'] = TracBugParser.page2date_modified(self.bug_html)
+        # All is fine, proceed as normal.
+        ret['date_reported'] = TracBugParser.page2date_opened(self.bug_html)
+        ret['last_touched'] = TracBugParser.page2date_modified(self.bug_html)
 
         # Check for the bitesized keyword
         if tm.bitesized_type:

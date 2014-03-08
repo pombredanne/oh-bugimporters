@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import twisted.web.client
+import datetime
 
 
 class BugImporter(object):
@@ -26,11 +27,6 @@ class BugImporter(object):
     #####################################################
     def log_error(self, failure):
         failure.printTraceback()
-
-    def add_url_to_waiting_list(self, url, callback, c_args={}, errback=None, e_args={}):
-        # FIXME: change default errback to a basic logging one.
-        errback = errback or self.log_error
-        self.waiting_urls[url] = (callback, c_args, errback, e_args)
 
     def get_next_waiting_url(self):
         # If there are no more waiting URLs, returns None.
@@ -94,7 +90,7 @@ class BugImporter(object):
     ###################################################
     # Importer functions that may require overloading #
     ###################################################
-    def __init__(self, tracker_model, reactor_manager, bug_parser=None,
+    def __init__(self, tracker_model, reactor_manager=None, bug_parser=None,
             data_transits=None):
         # Store the tracker model
         self.tm = tracker_model
@@ -136,3 +132,8 @@ class BugImporter(object):
     def determine_if_finished(self):
         # Implement this in a subclass
         raise NotImplementedError
+
+def printable_datetime(datetime_obj=None):
+    if datetime_obj is None:
+        datetime_obj = datetime.datetime.utcnow()
+    return datetime_obj.isoformat()
